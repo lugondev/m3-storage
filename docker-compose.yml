@@ -1,0 +1,102 @@
+networks:
+  signoz-network:
+    driver: bridge
+
+services:
+  postgres:
+    image: postgis/postgis:15-3.5
+    container_name: auth-postgres
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: auth_sys
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U root -d auth_sys"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - signoz-network # Connect to the same network if needed, or keep separate
+
+  redis:
+    image: redis:latest
+    container_name: auth-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - signoz-network # Connect to the same network if needed, or keep separate
+
+  # SigNoz Services
+  clickhouse:
+    image: clickhouse/clickhouse-server:23.3 # Use Altinity image for better ARM support
+    container_name: signoz-clickhouse
+    ports:
+      - "8123:8123" # HTTP
+      - "9000:9000" # Native TCP
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "localhost:8123/ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - signoz-network
+
+  signoz-otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.122.1
+    container_name: signoz-otel-collector
+    depends_on:
+      clickhouse:
+        condition: service_healthy
+    ports:
+      - "4317:4317"   # OTLP gRPC
+      - "4318:4318"   # OTLP HTTP
+    volumes:
+      - ./config/signoz/otel-collector-config.yaml:/etc/otel-collector-config.yaml
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    networks:
+      - signoz-network
+
+  signoz-frontend:
+      image: signoz/signoz:v0.81.0
+      container_name: signoz-frontend
+      depends_on:
+        signoz-otel-collector:
+          condition: service_started
+      ports:
+        - "3301:3301"
+      volumes:
+        - ./config/signoz/sqlite:/var/lib/signoz/
+        - ./config/signoz:/root/config/dashboards
+        - ./config/signoz/prometheus.yml:/root/config/prometheus.yml
+      command: ["--config=/root/config/prometheus.yml"]
+      environment:
+        - SIGNOZ_ALERTMANAGER_PROVIDER=signoz
+        - SIGNOZ_TELEMETRYSTORE_CLICKHOUSE_DSN=tcp://clickhouse:9000
+        - SIGNOZ_SQLSTORE_SQLITE_PATH=/var/lib/signoz/signoz.db
+        - STORAGE=clickhouse
+        - TELEMETRY_ENABLED=false
+      networks:
+        - signoz-network
+
+volumes:
+  postgres_data:
+  redis_data:
+  clickhouse_data:
+  signoz_query_data: # Declare the volume for query service data

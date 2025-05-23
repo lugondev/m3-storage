@@ -1,0 +1,173 @@
+basePath: /api/v1
+definitions:
+  internal_modules_user_handler.ErrorResponse:
+    properties:
+      message:
+        type: string
+    type: object
+  internal_modules_user_handler.RegisterUserRequest:
+    properties:
+      email:
+        type: string
+      first_name:
+        type: string
+      last_name:
+        type: string
+      password:
+        minLength: 8
+        type: string
+    required:
+    - email
+    - first_name
+    - last_name
+    - password
+    type: object
+  internal_modules_user_handler.UserResponse:
+    properties:
+      email:
+        type: string
+      first_name:
+        type: string
+      id:
+        type: string
+      last_name:
+        type: string
+    type: object
+host: localhost:8081
+info:
+  contact:
+    email: support@swagger.io
+    name: API Support
+    url: http://www.swagger.io/support
+  description: This is the core API for AuthSys platform
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: AuthSys API
+  version: "1.0"
+paths:
+  /media/upload:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Upload a file to the specified provider with optional media type
+        hint
+      parameters:
+      - description: File to upload
+        in: formData
+        name: file
+        required: true
+        type: file
+      - description: Storage provider (e.g., s3, azure, firebase, discord). If not
+          specified, default provider will be used.
+        in: formData
+        name: provider
+        type: string
+      - description: Media type hint (e.g., image/jpeg, video/mp4). If not specified,
+          it will be determined from the file.
+        in: formData
+        name: media_type
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: File uploaded successfully with media details
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad request - missing file or invalid parameters
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized - missing or invalid JWT token
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Upload a file
+      tags:
+      - Media
+  /users/{id}:
+    get:
+      description: Retrieve user details by their unique ID.
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully retrieved user
+          schema:
+            $ref: '#/definitions/internal_modules_user_handler.UserResponse'
+        "404":
+          description: User not found
+          schema:
+            $ref: '#/definitions/internal_modules_user_handler.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/internal_modules_user_handler.ErrorResponse'
+      summary: Get a user by ID
+      tags:
+      - Users
+  /users/register:
+    post:
+      consumes:
+      - application/json
+      description: Register a new user with email, password, first name, and last
+        name.
+      parameters:
+      - description: User registration details
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/internal_modules_user_handler.RegisterUserRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: User created successfully
+          schema:
+            $ref: '#/definitions/internal_modules_user_handler.UserResponse'
+        "400":
+          description: Invalid request payload
+          schema:
+            $ref: '#/definitions/internal_modules_user_handler.ErrorResponse'
+        "409":
+          description: User with this email already exists
+          schema:
+            $ref: '#/definitions/internal_modules_user_handler.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/internal_modules_user_handler.ErrorResponse'
+      summary: Register a new user
+      tags:
+      - Users
+schemes:
+- http
+- https
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

@@ -1,0 +1,36 @@
+# Version control
+.git
+.gitignore
+
+# Dependencies
+vendor/
+
+# Build files
+cmd/server/tmp
+cmd/server/server
+
+# Development files
+README.md
+docs/
+*.md
+*.log
+
+# IDE specific files
+.idea/
+.vscode/
+
+# Next.js frontend
+next/
+
+# Temporary files
+tmp/
+*.tmp
+
+# Docker files
+Dockerfile
+docker-compose.yml
+
+# Environment files
+.env*
+
+config.yaml

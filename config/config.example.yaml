@@ -1,0 +1,90 @@
+# Application Configuration
+app:
+    env: 'development' # Environment (development, staging, production)
+    name: 'm3-adapters'
+    port: '8080' # Port the application runs on
+    # IMPORTANT: Set a strong, unique secret via the APP_SECRET environment variable in production.
+    # Avoid storing secrets directly in config files if possible.
+    secret: '' # Set APP_SECRET environment variable instead for security
+    clientUrl: '' # client url/frontend
+    origins: '' # cors
+
+# Database Configuration (PostgreSQL)
+db:
+    host: 'localhost'
+    port: '5432'
+    user: 'root'
+    password: 'root'
+    name: 'm3_db'
+    sslMode: 'disable' # Recommended: "require" or "verify-full" in production
+    logLevel: 'info' # silent, error, warn, info
+
+# Redis Configuration
+redis:
+    host: 'localhost'
+    port: '6379'
+    password: '' # Leave empty if no password
+    db: 0
+
+# Logging Configuration
+log:
+    level: 'debug' # Log level (debug, info, warn, error)
+    format: 'console' # Log format (console, json)
+
+# Telegram Configuration (Notifications)
+telegram:
+    botToken: '' # Your Telegram Bot Token. Set TELEGRAM_BOT_TOKEN env var if preferred.
+    chatId: '' # Optional: Default Chat ID for notifications if 'To' is empty. Set TELEGRAM_DEFAULT_CHAT_ID env var if preferred.
+    debug: false # Enable Telegram bot debug mode
+
+# Signoz Configuration (Observability - Tracing & Logging)
+signoz:
+    collectorUrl: 'ingest.us.signoz.cloud:443' # Signoz OTLP collector endpoint. Set SIGNOZ_COLLECTOR_URL env var if preferred.
+    insecure: 'false' # Set to 'true' to disable TLS (e.g., for local testing). Set SIGNOZ_INSECURE env var if preferred.
+    headers: {} # Optional: Additional headers for the OTLP exporter (e.g., authentication). Set SIGNOZ_HEADERS env var if preferred (e.g., "key1=value1,key2=value2").
+    # Example:
+    # headers:
+    #   signoz-ingestion-key: "YOUR_INGESTION_KEY_HERE"
+
+adapter:
+    notify: 'telegram'
+
+# Rate Limiter Configuration
+rateLimiter:
+    max: 300 # Max requests allowed per window
+    expirationSeconds: 30 # Window duration in seconds
+
+# FireStore Configuration
+firestore:
+    projectID: 'your-project-id' # Google Cloud Project ID
+    credentialsFile: 'path/to/your/serviceAccountKey.json' # Path to Firebase Admin SDK service account key JSON file
+    bucketName: 'your-project-id.appspot.com' # Firebase Storage bucket name (usually projectID.appspot.com)
+
+# S3 Configuration
+s3:
+    accessKeyID: '' # AWS Access Key ID. Set S3_ACCESS_KEY_ID env var if preferred.
+    secretAccessKey: '' # AWS Secret Access Key. Set S3_SECRET_ACCESS_KEY env var if preferred.
+    region: 'us-east-1' # AWS Region. Set S3_REGION env var if preferred.
+    bucketName: 'your-s3-bucket-name' # S3 Bucket Name. Set S3_BUCKET_NAME env var if preferred.
+    endpoint: '' # Optional: Custom S3-compatible endpoint (e.g., for MinIO). Set S3_ENDPOINT env var if preferred.
+    disableSSL: false # Optional: Set to true to disable SSL (e.g., for local MinIO). Set S3_DISABLE_SSL env var if preferred.
+    forcePathStyle: false # Optional: Set to true to force path-style addressing (e.g., for MinIO). Set S3_FORCE_PATH_STYLE env var if preferred.
+
+# Cloudflare R2 Configuration
+cloudflare:
+    accountID: '' # Cloudflare Account ID. Set CLOUDFLARE_ACCOUNT_ID env var if preferred.
+    accessKeyID: '' # R2 Access Key ID. Set CLOUDFLARE_ACCESS_KEY_ID env var if preferred.
+    secretAccessKey: '' # R2 Secret Access Key. Set CLOUDFLARE_SECRET_ACCESS_KEY env var if preferred.
+    bucketName: 'your-r2-bucket-name' # R2 Bucket Name. Set CLOUDFLARE_BUCKET_NAME env var if preferred.
+    publicDomain: '' # Optional: Custom public domain for accessing files (e.g., "files.example.com"). Set CLOUDFLARE_PUBLIC_DOMAIN env var if preferred.
+
+# Discord Configuration (Notifications & File Storage)
+discord:
+    botToken: '' # Discord Bot Token. Set DISCORD_BOT_TOKEN env var if preferred.
+    channelID: '' # Discord Channel ID for file adapters/notifications. Set DISCORD_CHANNEL_ID env var if preferred.
+    webhookURL: '' # Optional: Discord Webhook URL for notifications (alternative to bot). Set DISCORD_WEBHOOK_URL env var if preferred.
+
+# Local Storage Configuration
+localStorage:
+    path: './uploads' # Path to the local directory for storing files. Set LOCAL_STORAGE_PATH env var if preferred.
+    baseURL: '/files' # Base URL for accessing files publicly (e.g., http://localhost:8080/files). Set LOCAL_STORAGE_BASE_URL env var if preferred.

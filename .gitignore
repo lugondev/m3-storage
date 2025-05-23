@@ -1,0 +1,58 @@
+# Environment variables and specific config files
+.env
+config.yaml
+config.*.yaml
+!config.example.yaml
+
+# Node.js specific
+node_modules/
+
+# Binary files
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+bin/
+
+# Go specific
+*.test
+*.out
+/vendor/
+go.work
+
+# IDE specific
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+
+# OS specific
+.DS_Store
+Thumbs.db
+
+# Build directory
+build/
+dist/
+
+# Temporary files
+tmp/
+temp/
+
+# Debug files
+debug/
+
+# Test coverage
+coverage.txt
+coverage.html
+
+*.json
+**/*.db
+.vercel
+
+uploads/*
+!uploads/.gitkeep

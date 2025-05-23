@@ -1,0 +1,53 @@
+[error_invalid_input]
+other = "Đầu vào không hợp lệ"
+
+[error_unauthorized]
+other = "Truy cập trái phép"
+
+[error_forbidden]
+other = "Truy cập bị cấm"
+
+[error_not_found]
+other = "Không tìm thấy tài nguyên"
+
+[error_conflict]
+other = "Xung đột tài nguyên"
+
+[error_internal_server_error]
+other = "Lỗi máy chủ nội bộ"
+
+[error_validation_error]
+other = "Xác thực thất bại"
+
+[error_user_not_found]
+other = "Không tìm thấy người dùng"
+
+[error_account_not_active]
+other = "Tài khoản không hoạt động"
+
+[error_invalid_2fa_code]
+other = "Mã xác thực hai yếu tố không hợp lệ"
+
+[error_token_expired]
+other = "Token đã hết hạn"
+
+[error_invalid_token]
+other = "Token không hợp lệ"
+
+[error_400]
+other = "Yêu cầu không hợp lệ"
+
+[error_401]
+other = "Không được phép"
+
+[error_403]
+other = "Bị cấm"
+
+[error_404]
+other = "Không tìm thấy"
+
+[error_409]
+other = "Xung đột"
+
+[error_500]
+other = "Lỗi máy chủ nội bộ"

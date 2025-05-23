@@ -1,0 +1,53 @@
+[error_invalid_input]
+other = "Invalid input provided"
+
+[error_unauthorized]
+other = "Unauthorized access"
+
+[error_forbidden]
+other = "Access forbidden"
+
+[error_not_found]
+other = "Resource not found"
+
+[error_conflict]
+other = "Resource conflict"
+
+[error_internal_server_error]
+other = "Internal server error"
+
+[error_validation_error]
+other = "Validation failed"
+
+[error_user_not_found]
+other = "User not found"
+
+[error_account_not_active]
+other = "Account is not active"
+
+[error_invalid_2fa_code]
+other = "Invalid two-factor authentication code"
+
+[error_token_expired]
+other = "Token has expired"
+
+[error_invalid_token]
+other = "Invalid token"
+
+[error_400]
+other = "Bad Request"
+
+[error_401]
+other = "Unauthorized"
+
+[error_403]
+other = "Forbidden"
+
+[error_404]
+other = "Not Found"
+
+[error_409]
+other = "Conflict"
+
+[error_500]
+other = "Internal Server Error"
