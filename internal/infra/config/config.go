@@ -100,6 +100,13 @@ type LocalStorageConfig struct {
 	SignedURLSecret string        `mapstructure:"signedUrlSecret"` // Secret key for signing URLs (basic example)
 }
 
+type AzureConfig struct {
+	AccountName   string `mapstructure:"accountName"`
+	AccountKey    string `mapstructure:"accountKey"`
+	ContainerName string `mapstructure:"containerName"`
+	ServiceURL    string `mapstructure:"serviceUrl"`
+}
+
 // Config stores all configuration of the application.
 type Config struct {
 	App          AppConfig          `mapstructure:"app"`

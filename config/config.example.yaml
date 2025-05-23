@@ -54,6 +54,13 @@ rateLimiter:
     max: 300 # Max requests allowed per window
     expirationSeconds: 30 # Window duration in seconds
 
+# Azure Blob Storage Configuration
+azure:
+    accountName: '' # Azure Storage account name. Set AZURE_ACCOUNT_NAME env var if preferred.
+    accountKey: '' # Azure Storage account key. Set AZURE_ACCOUNT_KEY env var if preferred.
+    containerName: '' # Azure Blob Storage container name. Set AZURE_CONTAINER_NAME env var if preferred.
+    serviceUrl: '' # Optional: Custom service URL (e.g., for Azurite emulator). Set AZURE_SERVICE_URL env var if preferred.
+
 # FireStore Configuration
 firestore:
     projectID: 'your-project-id' # Google Cloud Project ID

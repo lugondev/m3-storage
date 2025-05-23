@@ -17,7 +17,8 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob/sas"
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob/service"
 
-	"github.com/lugondev/go-log"
+	logger "github.com/lugondev/go-log"
+	"github.com/lugondev/m3-storage/internal/infra/config"
 	"github.com/lugondev/m3-storage/internal/modules/storage/port"
 )
 
@@ -31,39 +32,25 @@ type azureProvider struct {
 }
 
 // NewAzureProvider creates a new instance of azureProvider.
-// Config map is expected to contain:
-// - "account_name": (string) Azure Storage account name (required)
-// - "account_key": (string) Azure Storage account key (required)
-// - "container_name": (string) Azure Blob Storage container name (required)
-// - "logger": (logger.Logger) A logger instance (required)
-// - "service_url": (string) Optional: custom service URL (e.g., for Azurite emulator or specific clouds)
-// If service_url is not provided, it defaults to "https://<account_name>.blob.core.windows.net/"
-func NewAzureProvider(config map[string]interface{}) (port.StorageProvider, error) {
-	log, ok := config["logger"].(logger.Logger)
-	if !ok || log == nil {
-		return nil, fmt.Errorf("logger is required in config for AzureProvider")
-	}
-	log = log.WithFields(map[string]any{"component": "AzureProvider"})
+func NewAzureProvider(config *config.AzureConfig, logger logger.Logger) (port.StorageProvider, error) {
+	log := logger.WithFields(map[string]any{"component": "AzureProvider"})
 
-	accountName, ok := config["account_name"].(string)
-	if !ok || accountName == "" {
+	if config.AccountName == "" {
 		return nil, fmt.Errorf("account_name is required for AzureProvider")
 	}
-	accountKey, ok := config["account_key"].(string)
-	if !ok || accountKey == "" {
+	if config.AccountKey == "" {
 		return nil, fmt.Errorf("account_key is required for AzureProvider")
 	}
-	containerName, ok := config["container_name"].(string)
-	if !ok || containerName == "" {
+	if config.ContainerName == "" {
 		return nil, fmt.Errorf("container_name is required for AzureProvider")
 	}
 
-	serviceURL, _ := config["service_url"].(string)
+	serviceURL := config.ServiceURL
 	if serviceURL == "" {
-		serviceURL = fmt.Sprintf("https://%s.blob.core.windows.net/", accountName)
+		serviceURL = fmt.Sprintf("https://%s.blob.core.windows.net/", config.AccountName)
 	}
 
-	cred, err := azblob.NewSharedKeyCredential(accountName, accountKey)
+	cred, err := azblob.NewSharedKeyCredential(config.AccountName, config.AccountKey)
 	if err != nil {
 		log.Errorf(context.Background(), "Failed to create Azure shared key credential", map[string]any{"error": err})
 		return nil, fmt.Errorf("failed to create Azure shared key credential: %w", err)
@@ -83,12 +70,12 @@ func NewAzureProvider(config map[string]interface{}) (port.StorageProvider, erro
 		return nil, fmt.Errorf("failed to create Azure Blob service client: %w", err)
 	}
 
-	log.Infof(context.Background(), "AzureProvider initialized", map[string]any{"account": accountName, "container": containerName})
+	log.Infof(context.Background(), "AzureProvider initialized", map[string]any{"account": config.AccountName, "container": config.ContainerName})
 	return &azureProvider{
 		client:        client,
 		serviceClient: serviceClient,
-		containerName: containerName,
-		accountName:   accountName,
+		containerName: config.ContainerName,
+		accountName:   config.AccountName,
 		logger:        log,
 	}, nil
 }
