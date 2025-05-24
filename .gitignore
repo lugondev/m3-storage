@@ -56,3 +56,5 @@ coverage.html
 
 uploads/*
 !uploads/.gitkeep
+
+server
