@@ -7,7 +7,7 @@ A scalable media management system built with Go (Fiber) and Next.js, featuring 
 - Multiple storage provider support:
   - Azure Blob Storage
   - Discord CDN
-  - Amazon S3
+  - S3 Compatible: AWS, R2, Scaleway, Backblaze
   - Firebase Storage
   - Local Storage
 - Unified media management interface
