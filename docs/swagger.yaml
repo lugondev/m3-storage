@@ -5,23 +5,6 @@ definitions:
       message:
         type: string
     type: object
-  internal_modules_user_handler.RegisterUserRequest:
-    properties:
-      email:
-        type: string
-      first_name:
-        type: string
-      last_name:
-        type: string
-      password:
-        minLength: 8
-        type: string
-    required:
-    - email
-    - first_name
-    - last_name
-    - password
-    type: object
   internal_modules_user_handler.UserResponse:
     properties:
       email:
@@ -100,6 +83,50 @@ paths:
       summary: Upload a file
       tags:
       - Media
+  /storage/health:
+    get:
+      consumes:
+      - application/json
+      description: Check if the storage provider is healthy and accessible
+      parameters:
+      - description: Storage provider type
+        enum:
+        - s3
+        - cloudflare_r2
+        - local
+        - firebase
+        - azure
+        - discord
+        - scaleway
+        - backblaze
+        in: query
+        name: provider_type
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Check storage provider health
+      tags:
+      - storage
   /users/{id}:
     get:
       description: Retrieve user details by their unique ID.
@@ -125,41 +152,6 @@ paths:
           schema:
             $ref: '#/definitions/internal_modules_user_handler.ErrorResponse'
       summary: Get a user by ID
-      tags:
-      - Users
-  /users/register:
-    post:
-      consumes:
-      - application/json
-      description: Register a new user with email, password, first name, and last
-        name.
-      parameters:
-      - description: User registration details
-        in: body
-        name: user
-        required: true
-        schema:
-          $ref: '#/definitions/internal_modules_user_handler.RegisterUserRequest'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: User created successfully
-          schema:
-            $ref: '#/definitions/internal_modules_user_handler.UserResponse'
-        "400":
-          description: Invalid request payload
-          schema:
-            $ref: '#/definitions/internal_modules_user_handler.ErrorResponse'
-        "409":
-          description: User with this email already exists
-          schema:
-            $ref: '#/definitions/internal_modules_user_handler.ErrorResponse'
-        "500":
-          description: Internal server error
-          schema:
-            $ref: '#/definitions/internal_modules_user_handler.ErrorResponse'
-      summary: Register a new user
       tags:
       - Users
 schemes:

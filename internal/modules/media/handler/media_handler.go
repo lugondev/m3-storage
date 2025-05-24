@@ -7,19 +7,18 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 	logger "github.com/lugondev/go-log" // Import custom logger
-	"go.uber.org/zap"
-
 	"github.com/lugondev/m3-storage/internal/modules/media/port"
+	"go.uber.org/zap"
 )
 
-type mediaHandler struct {
+type MediaHandler struct {
 	logger       logger.Logger // Keep as *zap.Logger for internal use
 	mediaService port.MediaService
 }
 
 // NewMediaHandler creates a new MediaHandler.
-func NewMediaHandler(appLogger logger.Logger, mediaService port.MediaService) port.MediaHandler {
-	return &mediaHandler{
+func NewMediaHandler(appLogger logger.Logger, mediaService port.MediaService) *MediaHandler {
+	return &MediaHandler{
 		logger:       appLogger,
 		mediaService: mediaService,
 	}
@@ -40,7 +39,7 @@ func NewMediaHandler(appLogger logger.Logger, mediaService port.MediaService) po
 // @Failure 401 {object} map[string]string "Unauthorized - missing or invalid JWT token"
 // @Failure 500 {object} map[string]string "Internal server error"
 // @Router /media/upload [post]
-func (h *mediaHandler) UploadFile(c *fiber.Ctx) error {
+func (h *MediaHandler) UploadFile(c *fiber.Ctx) error {
 	// 0. Extract UserID from JWT token
 	//claims, ok := c.Locals(constants.UserClaimsKey).(*jwt.JWTClaims)
 	//if !ok || claims == nil {

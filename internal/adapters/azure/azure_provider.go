@@ -276,6 +276,28 @@ func (p *azureProvider) Download(ctx context.Context, key string) (io.ReadCloser
 	return downloadResponse.Body, fileObject, nil
 }
 
+// CheckHealth checks if the storage provider is healthy and accessible.
+func (p *azureProvider) CheckHealth(ctx context.Context) error {
+	var err error
+
+	// First verify service-level access by listing containers
+	pager := p.serviceClient.NewListContainersPager(nil)
+	if _, err = pager.NextPage(ctx); err != nil {
+		p.logger.Errorf(ctx, "Azure health check failed: service access error", map[string]any{"error": err})
+		return fmt.Errorf("azure health check failed: service access error: %w", err)
+	}
+
+	// Then verify container access by getting its properties
+	containerClient := p.getContainerClient()
+	_, err = containerClient.GetProperties(ctx, nil)
+	if err != nil {
+		p.logger.Errorf(ctx, "Azure health check failed: container access error", map[string]any{"error": err})
+		return fmt.Errorf("azure health check failed: container access error: %w", err)
+	}
+
+	return nil
+}
+
 // ProviderType returns the type of the adapters provider.
 func (p *azureProvider) ProviderType() port.StorageProviderType {
 	return port.ProviderAzure

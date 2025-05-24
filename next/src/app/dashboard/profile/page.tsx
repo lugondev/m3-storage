@@ -2,7 +2,6 @@
 
 import {useEffect, useState, useRef, ChangeEvent} from 'react'
 import {useAuth} from '@/contexts/AuthContext'
-import {getCurrentUser, updateCurrentUser, updateCurrentUserProfile, updateCurrentUserPassword, updateUserAvatar} from '@/services/userService' // Changed to updateUserAvatar
 import {UserOutput, UserProfile, UpdateUserInput, UpdateProfileInput, UpdatePasswordInput} from '@/lib/apiClient' // Ensure these types match your generated client
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '@/components/ui/card'
 import {Skeleton} from '@/components/ui/skeleton'
@@ -22,11 +21,6 @@ import {CalendarIcon} from 'lucide-react'
 import {Calendar} from '@/components/ui/calendar'
 import {cn} from '@/lib/utils'
 import {Checkbox} from '@/components/ui/checkbox'
-
-// --- Import Security Tab Components ---
-import EmailVerificationStatus from '@/features/profile/components/security/EmailVerificationStatus'
-import PhoneVerification from '@/features/profile/components/security/PhoneVerification'
-import TwoFactorAuthManagement from '@/features/profile/components/security/TwoFactorAuthManagement'
 
 // Helper function to get initials
 const getInitials = (firstName?: string, lastName?: string, email?: string): string => {
@@ -663,8 +657,6 @@ export default function ProfilePage() {
 							<TabsTrigger value='general'>General Info</TabsTrigger>
 							<TabsTrigger value='profile'>Profile Details</TabsTrigger>
 							<TabsTrigger value='password'>Password</TabsTrigger>
-							{/* Added Security Tab Trigger */}
-							<TabsTrigger value='security'>Security</TabsTrigger>
 						</TabsList>
 
 						{/* General Info Tab */}
@@ -704,22 +696,6 @@ export default function ProfilePage() {
 								<CardContent>
 									{/* Pass userData to PasswordForm */}
 									<PasswordForm userData={userData} />
-								</CardContent>
-							</Card>
-						</TabsContent>
-
-						{/* Security Tab */}
-						<TabsContent value='security'>
-							<Card>
-								<CardHeader>
-									<CardTitle>Security Settings</CardTitle>
-									<CardDescription>Manage your email/phone verification and two-factor authentication.</CardDescription>
-								</CardHeader>
-								<CardContent className='space-y-6'>
-									{/* Integrate Security Components */}
-									<EmailVerificationStatus userData={userData} />
-									<PhoneVerification userData={userData} onUpdate={handleGeneralInfoUpdate} />
-									<TwoFactorAuthManagement userData={userData} onUpdate={handleGeneralInfoUpdate} />
 								</CardContent>
 							</Card>
 						</TabsContent>

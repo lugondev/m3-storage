@@ -227,6 +227,24 @@ func (p *LocalStorageProvider) Download(ctx context.Context, key string) (io.Rea
 	return file, objInfo, nil
 }
 
+// CheckHealth checks if the storage provider is healthy and accessible.
+func (p *LocalStorageProvider) CheckHealth(ctx context.Context) error {
+	// Check if base directory exists and is accessible
+	if _, err := os.Stat(p.config.Path); err != nil {
+		return fmt.Errorf("local storage health check failed: base directory error: %w", err)
+	}
+
+	// Try to create a temporary file to verify write permissions
+	tmpFile := filepath.Join(p.config.Path, ".health_check")
+	f, err := os.Create(tmpFile)
+	if err != nil {
+		return fmt.Errorf("local storage health check failed: write permission error: %w", err)
+	}
+	f.Close()
+	os.Remove(tmpFile) // Clean up
+	return nil
+}
+
 // ProviderType returns the type of the adapters provider.
 func (p *LocalStorageProvider) ProviderType() port.StorageProviderType {
 	return port.ProviderLocal

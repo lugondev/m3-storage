@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/storage"
+	"google.golang.org/api/iterator"
 
 	logger "github.com/lugondev/go-log"
 	"github.com/lugondev/m3-storage/internal/infra/config"
@@ -250,6 +251,21 @@ func (p *firebaseProvider) Download(ctx context.Context, key string) (io.ReadClo
 	}
 	p.logger.Infof(ctx, "Prepared file for download", map[string]any{"key": key})
 	return reader, fileObject, nil
+}
+
+// CheckHealth checks if the storage provider is healthy and accessible.
+func (p *firebaseProvider) CheckHealth(ctx context.Context) error {
+	// Try to list objects to verify bucket access
+	it := p.bucket.Objects(ctx, nil)
+
+	// Just try to get the first result to verify access
+	_, err := it.Next()
+	if err != nil && err != storage.ErrObjectNotExist && err != iterator.Done {
+		p.logger.Errorf(ctx, "Firebase health check failed", map[string]any{"error": err})
+		return fmt.Errorf("firebase health check failed: %w", err)
+	}
+
+	return nil
 }
 
 // ProviderType returns the type of the adapters provider.

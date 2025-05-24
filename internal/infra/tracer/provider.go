@@ -40,7 +40,6 @@ func InitOtel(cfg OtelInitConfig) func(context.Context) error {
 	// Determine security option based on Insecure flag
 	isInsecure := strings.ToLower(cfg.Insecure) == "true" || cfg.Insecure == "1" || strings.ToLower(cfg.Insecure) == "t"
 	if !isInsecure {
-		// Assuming the same TLS config works for both trace and log
 		tlsCreds := credentials.NewClientTLSFromCert(nil, "")
 		secureOption = otlptracegrpc.WithTLSCredentials(tlsCreds)
 		logSecureOption = otlploggrpc.WithTLSCredentials(tlsCreds)

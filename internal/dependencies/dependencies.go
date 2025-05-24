@@ -28,6 +28,7 @@ import (
 	mediaPort "github.com/lugondev/m3-storage/internal/modules/media/port"
 	mediaService "github.com/lugondev/m3-storage/internal/modules/media/service"
 	storageFactory "github.com/lugondev/m3-storage/internal/modules/storage/factory"
+	storageHandler "github.com/lugondev/m3-storage/internal/modules/storage/handler"
 
 	// User Module
 	userHandler "github.com/lugondev/m3-storage/internal/modules/user/handler"
@@ -53,8 +54,9 @@ type Application struct {
 	UserSvc    userPort.UserService
 
 	// Handlers
-	MediaHandler mediaPort.MediaHandler
-	UserHandler  userHandler.UserHandler
+	MediaHandler   *mediaHandler.MediaHandler
+	UserHandler    *userHandler.UserHandler
+	StorageHandler *storageHandler.StorageHandler
 
 	// Middleware
 	AuthMiddleware *middleware.AuthMiddleware
@@ -120,6 +122,8 @@ func BuildDependencies(infra *Infrastructure) (*Application, error) {
 	app.MediaSvc = mediaService.NewMediaService(infra.DB, log, sFactory) // Pass infra.DB
 	app.MediaHandler = mediaHandler.NewMediaHandler(log, app.MediaSvc)
 	log.Info(ctx, "Media module initialized")
+
+	app.StorageHandler = storageHandler.NewStorageHandler(sFactory, log)
 
 	log.Info(ctx, "Handlers initialized")
 

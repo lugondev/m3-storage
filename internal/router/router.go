@@ -2,7 +2,8 @@ package router
 
 import (
 	"github.com/lugondev/m3-storage/internal/interfaces/http/fiber/middleware"
-	mediaPort "github.com/lugondev/m3-storage/internal/modules/media/port"
+	mediaHandler "github.com/lugondev/m3-storage/internal/modules/media/handler"
+	storageHandler "github.com/lugondev/m3-storage/internal/modules/storage/handler"
 	userHandler "github.com/lugondev/m3-storage/internal/modules/user/handler"
 
 	"github.com/gofiber/fiber/v2"
@@ -11,9 +12,10 @@ import (
 
 // RouterConfig holds all the dependencies needed for route registration
 type RouterConfig struct {
-	AuthMw       *middleware.AuthMiddleware
-	MediaHandler mediaPort.MediaHandler
-	UserHandler  *userHandler.UserHandler // Use concrete type from handler package
+	AuthMw         *middleware.AuthMiddleware
+	MediaHandler   *mediaHandler.MediaHandler
+	UserHandler    *userHandler.UserHandler // Use concrete type from handler package
+	StorageHandler *storageHandler.StorageHandler
 }
 
 // RegisterRoutes centralizes all API route registrations following DDD principles.
@@ -28,6 +30,7 @@ func RegisterRoutes(app *fiber.App, config *RouterConfig) {
 	// Register domain-specific route groups
 	registerMediaRoutes(v1, config.AuthMw, config.MediaHandler)
 	registerUserRoutes(v1, config.AuthMw, config.UserHandler)
+	registerStorageRoutes(v1, config.StorageHandler)
 }
 
 // registerInfrastructureRoutes handles non-domain specific routes
@@ -38,7 +41,7 @@ func registerInfrastructureRoutes(app *fiber.App) {
 
 // registerMediaRoutes handles all media domain routes
 // This follows DDD by grouping routes by domain context
-func registerMediaRoutes(api fiber.Router, authMw *middleware.AuthMiddleware, handler mediaPort.MediaHandler) {
+func registerMediaRoutes(api fiber.Router, authMw *middleware.AuthMiddleware, handler *mediaHandler.MediaHandler) {
 	if handler == nil {
 		return // Gracefully handle missing handlers
 	}
@@ -54,6 +57,16 @@ func registerMediaRoutes(api fiber.Router, authMw *middleware.AuthMiddleware, ha
 	// mediaRoutes.Delete("/:id", authMw.RequireAuth(), handler.DeleteMedia)
 }
 
+// registerStorageRoutes handles storage-related routes
+func registerStorageRoutes(api fiber.Router, handler *storageHandler.StorageHandler) {
+	if handler == nil {
+		return // Gracefully handle missing handlers
+	}
+
+	storageRoutes := api.Group("/storage")
+	storageRoutes.Get("/health", handler.CheckHealth)
+}
+
 // registerUserRoutes handles all user domain routes
 // This follows DDD by keeping user operations in their own context
 func registerUserRoutes(api fiber.Router, authMw *middleware.AuthMiddleware, handler *userHandler.UserHandler) {
@@ -64,12 +77,5 @@ func registerUserRoutes(api fiber.Router, authMw *middleware.AuthMiddleware, han
 	userRoutes := api.Group("/users")
 
 	// User management operations
-	userRoutes.Post("/register", handler.Register)
 	userRoutes.Get("/:id", authMw.RequireAuth(), handler.GetUserByID)
-
-	// TODO: Add authentication routes
-	// authRoutes := api.Group("/auth")
-	// authRoutes.Post("/login", handler.Login)
-	// authRoutes.Post("/refresh", handler.RefreshToken)
-	// authRoutes.Post("/logout", authMw.RequireAuth(), handler.Logout)
 }

@@ -10,10 +10,10 @@ import (
 type StorageProviderType string
 
 const (
-	ProviderS3           StorageProviderType = "s3"
+	ProviderS3           StorageProviderType = "s3"            // Amazon S3, DigitalOcean Spaces, etc.
 	ProviderCloudflareR2 StorageProviderType = "cloudflare_r2" // Cloudflare R2 is S3-compatible
 	ProviderLocal        StorageProviderType = "local"
-	ProviderFirebase     StorageProviderType = "firebase"
+	ProviderFirebase     StorageProviderType = "firebase"  // Firebase Storage
 	ProviderAzure        StorageProviderType = "azure"     // Azure Blob Storage
 	ProviderDiscord      StorageProviderType = "discord"   // Discord channel storage
 	ProviderScaleway     StorageProviderType = "scaleway"  // Scaleway Object Storage (S3-compatible)
@@ -41,6 +41,10 @@ type UploadOptions struct {
 
 // StorageProvider defines the interface for a adapters provider.
 type StorageProvider interface {
+	// CheckHealth checks if the storage provider is healthy and accessible.
+	// Returns error if the provider is not healthy or cannot be accessed.
+	CheckHealth(ctx context.Context) error
+
 	// Upload uploads a file to the adapters.
 	// key is the unique identifier for the file (e.g., "images/avatars/user123.jpg").
 	// reader is the content of the file.

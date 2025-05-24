@@ -136,9 +136,10 @@ func main() {
 
 	// --- Register API Routes ---
 	router.RegisterRoutes(app, &router.RouterConfig{
-		AuthMw:       appDeps.AuthMiddleware,
-		MediaHandler: appDeps.MediaHandler,
-		UserHandler:  &appDeps.UserHandler, // Convert to pointer
+		AuthMw:         appDeps.AuthMiddleware,
+		MediaHandler:   appDeps.MediaHandler,
+		UserHandler:    appDeps.UserHandler,
+		StorageHandler: appDeps.StorageHandler,
 	})
 
 	app.Get("/health", func(c *fiber.Ctx) error {

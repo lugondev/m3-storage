@@ -323,6 +323,30 @@ func (p *discordProvider) Download(ctx context.Context, key string) (io.ReadClos
 	return resp.Body, fileObj, nil
 }
 
+// CheckHealth checks if the storage provider is healthy and accessible.
+func (p *discordProvider) CheckHealth(ctx context.Context) error {
+	// Verify channel exists and is accessible by attempting to get channel info
+	req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s/channels/%s", discordAPIBaseURL, p.config.ChannelID), nil)
+	if err != nil {
+		return fmt.Errorf("discord health check failed: failed to create request: %w", err)
+	}
+
+	req.Header.Set("Authorization", "Bot "+p.config.BotToken)
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := p.client.Do(req)
+	if err != nil {
+		return fmt.Errorf("discord health check failed: failed to access channel: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("discord health check failed: unexpected status code: %d", resp.StatusCode)
+	}
+
+	return nil
+}
+
 // ProviderType returns the type of the storage provider.
 func (p *discordProvider) ProviderType() port.StorageProviderType {
 	return port.ProviderDiscord

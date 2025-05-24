@@ -101,9 +101,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/users/register": {
-            "post": {
-                "description": "Register a new user with email, password, first name, and last name.",
+        "/storage/health": {
+            "get": {
+                "description": "Check if the storage provider is healthy and accessible",
                 "consumes": [
                     "application/json"
                 ],
@@ -111,43 +111,54 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Users"
+                    "storage"
                 ],
-                "summary": "Register a new user",
+                "summary": "Check storage provider health",
                 "parameters": [
                     {
-                        "description": "User registration details",
-                        "name": "user",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/internal_modules_user_handler.RegisterUserRequest"
-                        }
+                        "enum": [
+                            "s3",
+                            "cloudflare_r2",
+                            "local",
+                            "firebase",
+                            "azure",
+                            "discord",
+                            "scaleway",
+                            "backblaze"
+                        ],
+                        "type": "string",
+                        "description": "Storage provider type",
+                        "name": "provider_type",
+                        "in": "query",
+                        "required": true
                     }
                 ],
                 "responses": {
-                    "201": {
-                        "description": "User created successfully",
+                    "200": {
+                        "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_user_handler.UserResponse"
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
                         }
                     },
                     "400": {
-                        "description": "Invalid request payload",
+                        "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_user_handler.ErrorResponse"
-                        }
-                    },
-                    "409": {
-                        "description": "User with this email already exists",
-                        "schema": {
-                            "$ref": "#/definitions/internal_modules_user_handler.ErrorResponse"
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
                         }
                     },
                     "500": {
-                        "description": "Internal server error",
+                        "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_user_handler.ErrorResponse"
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
                         }
                     }
                 }
@@ -201,30 +212,6 @@ const docTemplate = `{
             "properties": {
                 "message": {
                     "type": "string"
-                }
-            }
-        },
-        "internal_modules_user_handler.RegisterUserRequest": {
-            "type": "object",
-            "required": [
-                "email",
-                "first_name",
-                "last_name",
-                "password"
-            ],
-            "properties": {
-                "email": {
-                    "type": "string"
-                },
-                "first_name": {
-                    "type": "string"
-                },
-                "last_name": {
-                    "type": "string"
-                },
-                "password": {
-                    "type": "string",
-                    "minLength": 8
                 }
             }
         },
