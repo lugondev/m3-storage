@@ -43,6 +43,8 @@ func (f *storageFactory) CreateProvider(providerType port.StorageProviderType) (
 		return azure.NewAzureProvider(&f.config.Azure, f.logger)
 	case port.ProviderDiscord:
 		return discord.NewDiscordProvider(f.config.Discord, f.logger)
+	case port.ProviderScaleway:
+		return s3.NewS3Provider(f.config.Scaleway.ToS3Config(), f.logger)
 	default:
 		return nil, errors.New("unsupported storage provider type for default config: " + string(providerType))
 	}

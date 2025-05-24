@@ -107,6 +107,32 @@ type AzureConfig struct {
 	ServiceURL    string `mapstructure:"serviceUrl"`
 }
 
+// ScalewayConfig holds Scaleway Object Storage specific configuration
+type ScalewayConfig struct {
+	AccessKeyID     string `mapstructure:"accessKeyID"`     // API Access Key ID
+	SecretAccessKey string `mapstructure:"secretAccessKey"` // API Secret Access Key
+	Region          string `mapstructure:"region"`          // Region (e.g., fr-par, nl-ams)
+	BucketName      string `mapstructure:"bucketName"`      // The bucket name
+	Endpoint        string `mapstructure:"endpoint"`        // Optional: Custom endpoint URL
+}
+
+// ToS3Config converts ScalewayConfig to S3Config for use with S3-compatible API
+func (c ScalewayConfig) ToS3Config() S3Config {
+	endpoint := c.Endpoint
+	if endpoint == "" {
+		endpoint = fmt.Sprintf("https://%s.s3.%s.scw.cloud", c.BucketName, c.Region)
+	}
+
+	return S3Config{
+		AccessKeyID:     c.AccessKeyID,
+		SecretAccessKey: c.SecretAccessKey,
+		Region:          c.Region,
+		BucketName:      c.BucketName,
+		Endpoint:        endpoint,
+		ForcePathStyle:  true, // Scaleway requires path-style addressing
+	}
+}
+
 // Config stores all configuration of the application.
 type Config struct {
 	App          AppConfig          `mapstructure:"app"`
@@ -123,6 +149,7 @@ type Config struct {
 	Discord      DiscordConfig      `mapstructure:"discord"`
 	LocalStorage LocalStorageConfig `mapstructure:"localStorage"`
 	Azure        AzureConfig        `mapstructure:"azure"`
+	Scaleway     ScalewayConfig     `mapstructure:"scaleway"`
 }
 
 // RateLimiterConfig holds rate limiter specific configuration.

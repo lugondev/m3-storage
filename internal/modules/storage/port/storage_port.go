@@ -15,8 +15,9 @@ const (
 	ProviderGCS          StorageProviderType = "gcs"           // Google Cloud Storage
 	ProviderLocal        StorageProviderType = "local"
 	ProviderFirebase     StorageProviderType = "firebase"
-	ProviderAzure        StorageProviderType = "azure"   // Azure Blob Storage
-	ProviderDiscord      StorageProviderType = "discord" // Discord channel storage
+	ProviderAzure        StorageProviderType = "azure"    // Azure Blob Storage
+	ProviderDiscord      StorageProviderType = "discord"  // Discord channel storage
+	ProviderScaleway     StorageProviderType = "scaleway" // Scaleway Object Storage (S3-compatible)
 )
 
 // FileObject represents a file stored in the adapters.

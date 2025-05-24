@@ -95,3 +95,11 @@ discord:
 localStorage:
     path: './uploads' # Path to the local directory for storing files. Set LOCAL_STORAGE_PATH env var if preferred.
     baseURL: '/files' # Base URL for accessing files publicly (e.g., http://localhost:8080/files). Set LOCAL_STORAGE_BASE_URL env var if preferred.
+
+# Scaleway Object Storage Configuration
+scaleway:
+    accessKeyID: '' # Scaleway Access Key ID. Set SCALEWAY_ACCESS_KEY_ID env var if preferred.
+    secretAccessKey: '' # Scaleway Secret Access Key. Set SCALEWAY_SECRET_ACCESS_KEY env var if preferred.
+    region: 'fr-par' # Scaleway Region (e.g., fr-par, nl-ams). Set SCALEWAY_REGION env var if preferred.
+    bucketName: 'your-scaleway-bucket' # Scaleway Bucket Name. Set SCALEWAY_BUCKET_NAME env var if preferred.
+    endpoint: '' # Optional: Custom endpoint URL. Set SCALEWAY_ENDPOINT env var if preferred.
