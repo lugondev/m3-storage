@@ -1,5 +1,33 @@
 basePath: /api/v1
 definitions:
+  github_com_lugondev_m3-storage_internal_modules_media_domain.Media:
+    properties:
+      created_at:
+        type: string
+      file_name:
+        type: string
+      file_path:
+        description: Path in the adapters provider
+        type: string
+      file_size:
+        type: integer
+      id:
+        type: string
+      media_type:
+        description: e.g., image, video, document
+        type: string
+      provider:
+        description: e.g., local, s3, azure, firebase
+        type: string
+      public_url:
+        type: string
+      updated_at:
+        type: string
+      uploaded_at:
+        type: string
+      user_id:
+        type: string
+    type: object
   internal_modules_user_handler.ErrorResponse:
     properties:
       message:
@@ -30,6 +58,133 @@ info:
   title: AuthSys API
   version: "1.0"
 paths:
+  /media:
+    get:
+      description: Get a paginated list of media files owned by the authenticated
+        user
+      parameters:
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Number of items per page (default: 10, max: 100)'
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Paginated list of media files
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - missing or invalid JWT token
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: List media files for the authenticated user with pagination
+      tags:
+      - Media
+  /media/{id}:
+    delete:
+      description: Delete a specific media file by ID
+      parameters:
+      - description: Media ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: Media file deleted successfully
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad request - invalid media ID
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized - missing or invalid JWT token
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Media file not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete a specific media file
+      tags:
+      - Media
+    get:
+      description: Get details of a specific media file by ID
+      parameters:
+      - description: Media ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Media file details
+          schema:
+            $ref: '#/definitions/github_com_lugondev_m3-storage_internal_modules_media_domain.Media'
+        "400":
+          description: Bad request - invalid media ID
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized - missing or invalid JWT token
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Media file not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get a specific media file
+      tags:
+      - Media
   /media/upload:
     post:
       consumes:
@@ -125,6 +280,31 @@ paths:
               type: string
             type: object
       summary: Check storage provider health
+      tags:
+      - storage
+  /storage/health/all:
+    get:
+      consumes:
+      - application/json
+      description: Check if all configured storage providers are healthy and accessible
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              additionalProperties:
+                type: string
+              type: object
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Check all storage providers health
       tags:
       - storage
   /users/{id}:

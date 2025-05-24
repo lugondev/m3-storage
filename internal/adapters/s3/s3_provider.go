@@ -333,11 +333,16 @@ func (p *s3Provider) Download(ctx context.Context, key string) (io.ReadCloser, *
 
 // CheckHealth checks if the storage provider is healthy and accessible.
 func (p *s3Provider) CheckHealth(ctx context.Context) error {
-	// Try to list objects with max 1 result to check if bucket is accessible
-	_, err := p.client.ListObjectsV2(ctx, &s3.ListObjectsV2Input{
-		Bucket:  aws.String(p.bucketName),
-		MaxKeys: aws.Int32(1),
-	})
+	var err error
+	if p.ProviderType() != port.ProviderScaleway {
+		_, err = p.client.HeadBucket(ctx, &s3.HeadBucketInput{
+			Bucket: aws.String(p.bucketName),
+		})
+	} else {
+		_, err = p.client.ListBuckets(ctx, &s3.ListBucketsInput{
+			MaxBuckets: aws.Int32(1),
+		})
+	}
 	if err != nil {
 		p.logger.Errorf(ctx, "S3 health check failed", map[string]any{"error": err})
 		return fmt.Errorf("s3 health check failed: %w", err)
@@ -349,8 +354,15 @@ func (p *s3Provider) CheckHealth(ctx context.Context) error {
 func (p *s3Provider) ProviderType() port.StorageProviderType {
 	// If this provider is also used for Cloudflare R2, this might need adjustment
 	// or Cloudflare R2 could have its own type.
-	if p.endpointURL != "" && (strings.Contains(p.endpointURL, "r2.cloudflarestorage.com") || strings.Contains(p.endpointURL, "r2.cloudflarestorage.com")) {
+	if strings.Contains(p.endpointURL, "r2.cloudflarestorage.com") {
 		return port.ProviderCloudflareR2
+	}
+	// If using a custom endpoint, we can check for specific providers
+	if strings.Contains(p.endpointURL, "backblaze.com") {
+		return port.ProviderBackBlaze
+	}
+	if strings.Contains(p.endpointURL, "scw.cloud") || strings.Contains(p.endpointURL, "scaleway.com") {
+		return port.ProviderScaleway
 	}
 	return port.ProviderS3
 }

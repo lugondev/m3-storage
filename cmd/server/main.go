@@ -64,7 +64,11 @@ func main() {
 	}
 
 	// --- Initialize Logger & OpenTelemetry ---
-	log, otelErr := logger.NewLogger(&logger.Option{})
+	log, otelErr := logger.NewLogger(&logger.Option{
+		ScopeName:    cfg.App.Name,
+		ScopeVersion: cfg.App.Env,
+		Format:       cfg.Log.Format,
+	})
 	if otelErr != nil {
 		fmt.Printf("Failed to create OpenTelemetry logger: %v\n", otelErr)
 		os.Exit(1)

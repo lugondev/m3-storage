@@ -49,12 +49,12 @@ func registerMediaRoutes(api fiber.Router, authMw *middleware.AuthMiddleware, ha
 	mediaRoutes := api.Group("/media")
 
 	// Media upload operations - core domain functionality
-	mediaRoutes.Post("/upload", handler.UploadFile)
+	mediaRoutes.Post("/upload", authMw.RequireAuth(), handler.UploadFile)
 
 	// TODO: Add other media operations following RESTful patterns
-	// mediaRoutes.Get("/", authMw.RequireAuth(), handler.ListMedia)
-	// mediaRoutes.Get("/:id", authMw.RequireAuth(), handler.GetMedia)
-	// mediaRoutes.Delete("/:id", authMw.RequireAuth(), handler.DeleteMedia)
+	mediaRoutes.Get("/", authMw.RequireAuth(), handler.ListMedia)
+	mediaRoutes.Get("/:id", authMw.RequireAuth(), handler.GetMedia)
+	mediaRoutes.Delete("/:id", authMw.RequireAuth(), handler.DeleteMedia)
 }
 
 // registerStorageRoutes handles storage-related routes
@@ -65,6 +65,7 @@ func registerStorageRoutes(api fiber.Router, handler *storageHandler.StorageHand
 
 	storageRoutes := api.Group("/storage")
 	storageRoutes.Get("/health", handler.CheckHealth)
+	storageRoutes.Get("/health/all", handler.CheckHealthAll)
 }
 
 // registerUserRoutes handles all user domain routes
