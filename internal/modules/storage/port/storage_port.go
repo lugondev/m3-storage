@@ -12,12 +12,12 @@ type StorageProviderType string
 const (
 	ProviderS3           StorageProviderType = "s3"
 	ProviderCloudflareR2 StorageProviderType = "cloudflare_r2" // Cloudflare R2 is S3-compatible
-	ProviderGCS          StorageProviderType = "gcs"           // Google Cloud Storage
 	ProviderLocal        StorageProviderType = "local"
 	ProviderFirebase     StorageProviderType = "firebase"
-	ProviderAzure        StorageProviderType = "azure"    // Azure Blob Storage
-	ProviderDiscord      StorageProviderType = "discord"  // Discord channel storage
-	ProviderScaleway     StorageProviderType = "scaleway" // Scaleway Object Storage (S3-compatible)
+	ProviderAzure        StorageProviderType = "azure"     // Azure Blob Storage
+	ProviderDiscord      StorageProviderType = "discord"   // Discord channel storage
+	ProviderScaleway     StorageProviderType = "scaleway"  // Scaleway Object Storage (S3-compatible)
+	ProviderBackBlaze    StorageProviderType = "backblaze" // Backblaze B2 Cloud Storage
 )
 
 // FileObject represents a file stored in the adapters.

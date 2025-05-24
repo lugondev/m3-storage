@@ -37,11 +37,11 @@ type s3Provider struct {
 
 // NewS3Provider creates a new instance of s3Provider.
 func NewS3Provider(cfg config.S3Config, log logger.Logger) (port.StorageProvider, error) {
-	if log == nil {
-		return nil, fmt.Errorf("logger is required for S3Provider")
-	}
 	log = log.WithFields(map[string]any{"component": "S3Provider"})
 
+	if cfg.Endpoint == "" {
+		return nil, fmt.Errorf("endpoint is required for S3Provider")
+	}
 	if cfg.BucketName == "" {
 		return nil, fmt.Errorf("bucket_name is required for S3Provider")
 	}
@@ -93,6 +93,11 @@ func NewS3Provider(cfg config.S3Config, log logger.Logger) (port.StorageProvider
 	if err != nil {
 		log.Errorf(context.Background(), "Failed to load AWS SDK config", map[string]any{"error": err})
 		return nil, fmt.Errorf("failed to load AWS config: %w", err)
+	}
+	if strings.Contains(endpointURL, "backblaze") {
+		// Backblaze B2 S3-compatible storage requires specific settings
+		awsCfg.RequestChecksumCalculation = aws.RequestChecksumCalculationWhenRequired
+		awsCfg.ResponseChecksumValidation = aws.ResponseChecksumValidationWhenRequired
 	}
 
 	s3Client := s3.NewFromConfig(awsCfg, func(o *s3.Options) {

@@ -103,3 +103,12 @@ scaleway:
     region: 'fr-par' # Scaleway Region (e.g., fr-par, nl-ams). Set SCALEWAY_REGION env var if preferred.
     bucketName: 'your-scaleway-bucket' # Scaleway Bucket Name. Set SCALEWAY_BUCKET_NAME env var if preferred.
     endpoint: '' # Optional: Custom endpoint URL. Set SCALEWAY_ENDPOINT env var if preferred.
+
+# Backblaze B2 Configuration
+backblaze:
+    keyID: '' # Backblaze Application Key ID. Set BACKBLAZE_KEY_ID env var if preferred.
+    applicationKey: '' # Backblaze Application Key. Set BACKBLAZE_APPLICATION_KEY env var if preferred.
+    bucketID: '' # Backblaze Bucket ID. Set BACKBLAZE_BUCKET_ID env var if preferred.
+    bucketName: '' # Backblaze Bucket Name. Set BACKBLAZE_BUCKET_NAME env var if preferred.
+    region: 'us-west-002' # Optional: Region (defaults to us-west-002). Set BACKBLAZE_REGION env var if preferred.
+    endpoint: '' # Optional: Custom endpoint URL. Set BACKBLAZE_ENDPOINT env var if preferred.

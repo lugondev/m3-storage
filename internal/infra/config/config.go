@@ -116,6 +116,32 @@ type ScalewayConfig struct {
 	Endpoint        string `mapstructure:"endpoint"`        // Optional: Custom endpoint URL
 }
 
+// BackBlazeConfig holds Backblaze B2 specific configuration
+type BackBlazeConfig struct {
+	KeyID          string `mapstructure:"keyID"`          // Application Key ID
+	ApplicationKey string `mapstructure:"applicationKey"` // Application Key
+	BucketID       string `mapstructure:"bucketID"`       // Bucket ID
+	BucketName     string `mapstructure:"bucketName"`     // Bucket Name
+	Region         string `mapstructure:"region"`         // Optional: Region (e.g., us-west-002)
+	Endpoint       string `mapstructure:"endpoint"`       // Optional: Custom endpoint URL
+}
+
+// ToS3Config converts BackBlazeConfig to S3Config for use with S3-compatible API
+func (c BackBlazeConfig) ToS3Config() S3Config {
+	endpoint := c.Endpoint
+	if endpoint == "" && c.Region != "" {
+		endpoint = fmt.Sprintf("https://s3.%s.backblazeb2.com", c.Region)
+	}
+
+	return S3Config{
+		AccessKeyID:     c.KeyID,
+		SecretAccessKey: c.ApplicationKey,
+		BucketName:      c.BucketName,
+		Endpoint:        endpoint,
+		ForcePathStyle:  true, // BackBlaze requires path-style addressing
+	}
+}
+
 // ToS3Config converts ScalewayConfig to S3Config for use with S3-compatible API
 func (c ScalewayConfig) ToS3Config() S3Config {
 	endpoint := c.Endpoint
@@ -150,6 +176,7 @@ type Config struct {
 	LocalStorage LocalStorageConfig `mapstructure:"localStorage"`
 	Azure        AzureConfig        `mapstructure:"azure"`
 	Scaleway     ScalewayConfig     `mapstructure:"scaleway"`
+	BackBlaze    BackBlazeConfig    `mapstructure:"backblaze"`
 }
 
 // RateLimiterConfig holds rate limiter specific configuration.

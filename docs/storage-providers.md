@@ -10,6 +10,8 @@ This document describes how to configure and use different storage providers in 
 - **Firebase Storage** - Store files on Google Firebase Cloud Storage
 - **Azure Blob Storage** - Store files on Microsoft Azure Blob Storage
 - **Discord** - Store files using Discord channels (unique approach)
+- **Backblaze B2** - Store files on Backblaze B2 (S3-compatible)
+- **Scaleway Object Storage** - Store files on Scaleway Object Storage
 
 ## Discord Storage Provider
 
@@ -206,8 +208,14 @@ The Discord provider handles several error scenarios:
 
 ```yaml
 localStorage:
-    path: './uploads'
-    baseURL: '/files'
+    path: './uploads'      # Path to local storage directory
+    baseURL: '/files'      # Base URL for public access
+```
+
+Environment variables:
+```bash
+export LOCAL_STORAGE_PATH="/var/uploads"
+export LOCAL_STORAGE_BASE_URL="/files"
 ```
 
 ### AWS S3
@@ -218,9 +226,25 @@ s3:
     secretAccessKey: 'YOUR_SECRET_KEY'
     region: 'us-east-1'
     bucketName: 'your-bucket-name'
+    endpoint: ''           # Optional: Custom endpoint for S3-compatible services
+    disableSSL: false     # Optional: Disable SSL for local development
+    forcePathStyle: false # Optional: Use path-style addressing
+```
+
+Environment variables:
+```bash
+export S3_ACCESS_KEY_ID="your_access_key"
+export S3_SECRET_ACCESS_KEY="your_secret_key"
+export S3_REGION="us-east-1"
+export S3_BUCKET_NAME="your_bucket"
+export S3_ENDPOINT=""
+export S3_DISABLE_SSL="false"
+export S3_FORCE_PATH_STYLE="false"
 ```
 
 ### Cloudflare R2
+
+Cloudflare R2 is implemented using the S3-compatible API:
 
 ```yaml
 cloudflare:
@@ -228,6 +252,16 @@ cloudflare:
     accessKeyID: 'YOUR_R2_ACCESS_KEY'
     secretAccessKey: 'YOUR_R2_SECRET_KEY'
     bucketName: 'your-r2-bucket'
+    publicDomain: ''      # Optional: Custom domain for public access
+```
+
+Environment variables:
+```bash
+export CLOUDFLARE_ACCOUNT_ID="your_account_id"
+export CLOUDFLARE_ACCESS_KEY_ID="your_access_key"
+export CLOUDFLARE_SECRET_ACCESS_KEY="your_secret_key"
+export CLOUDFLARE_BUCKET_NAME="your_bucket"
+export CLOUDFLARE_PUBLIC_DOMAIN=""
 ```
 
 ### Firebase Storage
@@ -237,6 +271,68 @@ firestore:
     projectID: 'your-project-id'
     credentialsFile: 'path/to/serviceAccountKey.json'
     bucketName: 'your-project-id.appspot.com'
+```
+
+### Azure Blob Storage
+
+```yaml
+azure:
+    accountName: 'YOUR_ACCOUNT_NAME'     # Azure Storage account name
+    accountKey: 'YOUR_ACCOUNT_KEY'       # Azure Storage account key
+    containerName: 'YOUR_CONTAINER_NAME' # Azure Blob Storage container name
+    serviceUrl: ''                       # Optional: Custom service URL
+```
+
+Environment variables:
+```bash
+export AZURE_ACCOUNT_NAME="your_account_name"
+export AZURE_ACCOUNT_KEY="your_account_key"
+export AZURE_CONTAINER_NAME="your_container"
+export AZURE_SERVICE_URL=""
+```
+
+### Backblaze B2
+
+Backblaze B2 is a cost-effective cloud storage solution that provides S3-compatible API:
+
+```yaml
+backblaze:
+    keyID: 'YOUR_APPLICATION_KEY_ID'          # Application Key ID
+    applicationKey: 'YOUR_APPLICATION_KEY'     # Application Key
+    bucketID: 'YOUR_BUCKET_ID'                # Bucket ID from B2 console
+    bucketName: 'your-bucket-name'            # Bucket Name
+    region: 'us-west-002'                     # Optional: Region (defaults to us-west-002)
+    endpoint: ''                              # Optional: Custom endpoint URL
+```
+
+Environment variables:
+```bash
+export BACKBLAZE_KEY_ID="your_key_id"
+export BACKBLAZE_APPLICATION_KEY="your_application_key"
+export BACKBLAZE_BUCKET_ID="your_bucket_id"
+export BACKBLAZE_BUCKET_NAME="your_bucket_name"
+export BACKBLAZE_REGION="us-west-002"
+export BACKBLAZE_ENDPOINT=""
+```
+
+### Scaleway Object Storage
+
+```yaml
+scaleway:
+    accessKeyID: ''           # Scaleway Access Key ID
+    secretAccessKey: ''       # Scaleway Secret Access Key
+    region: 'fr-par'         # Scaleway Region (e.g., fr-par, nl-ams)
+    bucketName: ''           # Scaleway Bucket Name
+    endpoint: ''             # Optional: Custom endpoint URL
+```
+
+Environment variables:
+```bash
+export SCALEWAY_ACCESS_KEY_ID="your_access_key"
+export SCALEWAY_SECRET_ACCESS_KEY="your_secret_key"
+export SCALEWAY_REGION="fr-par"
+export SCALEWAY_BUCKET_NAME="your_bucket"
+export SCALEWAY_ENDPOINT=""
 ```
 
 ## Provider Selection
@@ -254,20 +350,24 @@ media, err := mediaService.UploadFile(ctx, userID, fileHeader, "s3", "image")
 media, err := mediaService.UploadFile(ctx, userID, fileHeader, "", "image")
 ```
 
-## Configuration via Environment Variables
+## Features Common to All Providers
 
-All configuration can be overridden using environment variables:
+1. **Content Type Detection**
+   - Automatic content type detection from file extensions
+   - Manual content type override via UploadOptions
 
-```bash
-# Discord
-export DISCORD_BOT_TOKEN="your_bot_token"
-export DISCORD_CHANNEL_ID="your_channel_id"
+2. **Signed URLs**
+   - Time-limited access URLs for private files
+   - Configurable expiration duration
 
-# S3
-export S3_ACCESS_KEY_ID="your_access_key"
-export S3_SECRET_ACCESS_KEY="your_secret_key"
-export S3_BUCKET_NAME="your_bucket"
+3. **Error Handling**
+   - Consistent error types across providers
+   - Detailed error messages for troubleshooting
 
-# Local Storage
-export LOCAL_STORAGE_PATH="/var/uploads"
-export LOCAL_STORAGE_BASE_URL="/files"
+4. **Metadata Support**
+   - Custom metadata attachment to files
+   - Provider-specific metadata handling
+
+5. **URL Generation**
+   - Public URLs for accessible files
+   - Custom domain support where applicable

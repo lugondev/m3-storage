@@ -35,7 +35,6 @@ func (f *storageFactory) CreateProvider(providerType port.StorageProviderType) (
 	case port.ProviderS3:
 		return s3.NewS3Provider(f.config.S3, f.logger)
 	case port.ProviderCloudflareR2:
-		// Cloudflare R2 is S3 compatible, so it will use the S3 provider with R2 config
 		return s3.NewS3Provider(f.config.Cloudflare.ToS3Config(), f.logger)
 	case port.ProviderFirebase:
 		return firebase.NewFirebaseProvider(f.config.FireStore, f.logger)
@@ -45,6 +44,8 @@ func (f *storageFactory) CreateProvider(providerType port.StorageProviderType) (
 		return discord.NewDiscordProvider(f.config.Discord, f.logger)
 	case port.ProviderScaleway:
 		return s3.NewS3Provider(f.config.Scaleway.ToS3Config(), f.logger)
+	case port.ProviderBackBlaze:
+		return s3.NewS3Provider(f.config.BackBlaze.ToS3Config(), f.logger)
 	default:
 		return nil, errors.New("unsupported storage provider type for default config: " + string(providerType))
 	}
