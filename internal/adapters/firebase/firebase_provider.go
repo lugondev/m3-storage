@@ -23,8 +23,8 @@ type firebaseProvider struct {
 	logger     logger.Logger
 }
 
-// NewFirebaseService creates a new instance of FirebaseStorageService.
-func NewFirebaseService(cfg config.FireStoreConfig, log logger.Logger) (port.StorageProvider, error) {
+// NewFirebaseProvider creates a new instance of FirebaseStorageService.
+func NewFirebaseProvider(cfg config.FireStoreConfig, log logger.Logger) (port.StorageProvider, error) {
 	app, _, err := InitializeFirebase(cfg, log)
 	if err != nil {
 		log.Errorf(context.Background(), "Firebase initialization failed: %v", err)

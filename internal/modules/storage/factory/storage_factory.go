@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	logger "github.com/lugondev/go-log"
+	"github.com/lugondev/m3-storage/internal/adapters/azure"
 	"github.com/lugondev/m3-storage/internal/adapters/discord"
 	"github.com/lugondev/m3-storage/internal/adapters/firebase"
 	"github.com/lugondev/m3-storage/internal/adapters/local"
@@ -37,7 +38,9 @@ func (f *storageFactory) CreateProvider(providerType port.StorageProviderType) (
 		// Cloudflare R2 is S3 compatible, so it will use the S3 provider with R2 config
 		return s3.NewS3Provider(f.config.Cloudflare.ToS3Config(), f.logger)
 	case port.ProviderFirebase:
-		return firebase.NewFirebaseService(f.config.FireStore, f.logger)
+		return firebase.NewFirebaseProvider(f.config.FireStore, f.logger)
+	case port.ProviderAzure:
+		return azure.NewAzureProvider(&f.config.Azure, f.logger)
 	case port.ProviderDiscord:
 		return discord.NewDiscordProvider(f.config.Discord, f.logger)
 	default:

@@ -122,6 +122,7 @@ type Config struct {
 	Cloudflare   CloudflareConfig   `mapstructure:"cloudflare"`
 	Discord      DiscordConfig      `mapstructure:"discord"`
 	LocalStorage LocalStorageConfig `mapstructure:"localStorage"`
+	Azure        AzureConfig        `mapstructure:"azure"`
 }
 
 // RateLimiterConfig holds rate limiter specific configuration.
