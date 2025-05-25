@@ -8,9 +8,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/lugondev/m3-storage/internal/dependencies"
-	"github.com/lugondev/m3-storage/internal/interfaces/http/fiber/middleware"
-	"github.com/lugondev/m3-storage/internal/router"
+	"github.com/lugondev/m3-storage/internal/application"
+	"github.com/lugondev/m3-storage/internal/presentation/http/fiber/middleware"
+	"github.com/lugondev/m3-storage/internal/presentation/http/router"
 
 	// Infrastructure Providers & Core Infra
 	logger "github.com/lugondev/go-log"
@@ -115,7 +115,7 @@ func main() {
 	defer cache.CloseRedisClient(redisClient, log) // Close the Redis client wrapper
 
 	// --- Build Infrastructure Struct ---
-	infra := &dependencies.Infrastructure{
+	infra := &application.Infrastructure{
 		Config:      &cfg,
 		Logger:      log,
 		DB:          db,
@@ -123,7 +123,7 @@ func main() {
 	}
 
 	// --- Build Application Dependencies ---
-	appDeps, err := dependencies.BuildDependencies(infra)
+	appDeps, err := application.BuildDependencies(infra)
 	if err != nil {
 		log.Fatalf(context.Background(), "Failed to build application dependencies: %v", err)
 	}
@@ -142,7 +142,6 @@ func main() {
 	router.RegisterRoutes(app, &router.RouterConfig{
 		AuthMw:         appDeps.AuthMiddleware,
 		MediaHandler:   appDeps.MediaHandler,
-		UserHandler:    appDeps.UserHandler,
 		StorageHandler: appDeps.StorageHandler,
 	})
 

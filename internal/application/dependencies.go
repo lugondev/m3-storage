@@ -1,24 +1,22 @@
-package dependencies
+package application
 
 import (
 	"context"
 	"fmt"
 	"os"
 
-	"github.com/lugondev/m3-storage/internal/interfaces/http/fiber/middleware"
-
-	// External Libs
-	// Alias for firebase app
+	"github.com/lugondev/m3-storage/internal/presentation/http/fiber/middleware"
 
 	"gorm.io/gorm"
 
 	"github.com/lugondev/m3-storage/internal/infra/cache"
 	"github.com/lugondev/m3-storage/internal/infra/config" // For NewFirebaseStorageService
 	infraJWT "github.com/lugondev/m3-storage/internal/infra/jwt"
-	notifyPort "github.com/lugondev/m3-storage/internal/modules/notify/port"
-	notifyService "github.com/lugondev/m3-storage/internal/modules/notify/service"
 
 	logger "github.com/lugondev/go-log"
+	ssConfig "github.com/lugondev/send-sen/config"
+	ssPort "github.com/lugondev/send-sen/ports"
+	ssService "github.com/lugondev/send-sen/services"
 
 	// App Ports & Services (Health, Storage)
 	appPort "github.com/lugondev/m3-storage/internal/modules/app/port"
@@ -29,10 +27,6 @@ import (
 	mediaService "github.com/lugondev/m3-storage/internal/modules/media/service"
 	storageFactory "github.com/lugondev/m3-storage/internal/modules/storage/factory"
 	storageHandler "github.com/lugondev/m3-storage/internal/modules/storage/handler"
-
-	// User Module
-	userHandler "github.com/lugondev/m3-storage/internal/modules/user/handler"
-	userPort "github.com/lugondev/m3-storage/internal/modules/user/port"
 )
 
 // Infrastructure holds the initialized infrastructure components.
@@ -49,13 +43,11 @@ type Application struct {
 	CacheSvc   appPort.CacheService
 	StorageSvc appPort.StorageService
 	JWTSvc     *infraJWT.JWTService
-	NotifySvc  notifyPort.NotifyService
+	NotifySvc  ssPort.NotifyService
 	MediaSvc   mediaPort.MediaService
-	UserSvc    userPort.UserService
 
 	// Handlers
 	MediaHandler   *mediaHandler.MediaHandler
-	UserHandler    *userHandler.UserHandler
 	StorageHandler *storageHandler.StorageHandler
 
 	// Middleware
@@ -90,7 +82,10 @@ func BuildDependencies(infra *Infrastructure) (*Application, error) {
 	log.Info(ctx, "JWT Service initialized successfully")
 
 	// Initialize Notify Service
-	app.NotifySvc, err = notifyService.NewNotifyService(infra.Config, log)
+	app.NotifySvc, err = ssService.NewNotifyService(ssConfig.Config{
+		Adapter:  cfg.Adapter,
+		Telegram: cfg.Telegram,
+	}, log)
 	if err != nil {
 		log.Warnf(ctx, "Failed to initialize notification service (continuing without it?): %v", err)
 	} else {
@@ -103,9 +98,6 @@ func BuildDependencies(infra *Infrastructure) (*Application, error) {
 	// --- Initialize Middleware ---
 	app.AuthMiddleware = middleware.NewAuthMiddleware(app.JWTSvc)
 	log.Info(ctx, "Custom middleware initialized")
-
-	// --- Initialize Handlers ---
-	// app.UserHandler = *userHandler.NewUserHandler(app.JWTSvc, log) // Assuming UserHandler is initialized similarly
 
 	// Initialize Media Module
 	// Assuming StorageFactory is available or initialized elsewhere (e.g., in Infrastructure or passed to BuildDependencies)

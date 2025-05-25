@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/spf13/viper"
+
+	"github.com/lugondev/send-sen/config"
 )
 
 // AppConfig stores application-specific configuration.
@@ -161,66 +163,28 @@ func (c ScalewayConfig) ToS3Config() S3Config {
 
 // Config stores all configuration of the application.
 type Config struct {
-	App          AppConfig          `mapstructure:"app"`
-	DB           DBConfig           `mapstructure:"db"`
-	Redis        RedisConfig        `mapstructure:"redis"`
-	Log          LogConfig          `mapstructure:"log"`
-	Telegram     TelegramConfig     `mapstructure:"telegram"`
-	Adapter      AdapterConfig      `mapstructure:"adapter"`
-	RateLimiter  RateLimiterConfig  `mapstructure:"rateLimiter"`
-	Signoz       SignozConfig       `mapstructure:"signoz"`
-	FireStore    FireStoreConfig    `mapstructure:"firestore"`
-	S3           S3Config           `mapstructure:"s3"`
-	Cloudflare   CloudflareConfig   `mapstructure:"cloudflare"`
-	Discord      DiscordConfig      `mapstructure:"discord"`
-	LocalStorage LocalStorageConfig `mapstructure:"localStorage"`
-	Azure        AzureConfig        `mapstructure:"azure"`
-	Scaleway     ScalewayConfig     `mapstructure:"scaleway"`
-	BackBlaze    BackBlazeConfig    `mapstructure:"backblaze"`
+	App          AppConfig             `mapstructure:"app"`
+	DB           DBConfig              `mapstructure:"db"`
+	Redis        RedisConfig           `mapstructure:"redis"`
+	Log          LogConfig             `mapstructure:"log"`
+	Telegram     config.TelegramConfig `mapstructure:"telegram"`
+	Adapter      config.AdapterConfig  `mapstructure:"adapter"`
+	RateLimiter  RateLimiterConfig     `mapstructure:"rateLimiter"`
+	Signoz       SignozConfig          `mapstructure:"signoz"`
+	FireStore    FireStoreConfig       `mapstructure:"firestore"`
+	S3           S3Config              `mapstructure:"s3"`
+	Cloudflare   CloudflareConfig      `mapstructure:"cloudflare"`
+	Discord      DiscordConfig         `mapstructure:"discord"`
+	LocalStorage LocalStorageConfig    `mapstructure:"localStorage"`
+	Azure        AzureConfig           `mapstructure:"azure"`
+	Scaleway     ScalewayConfig        `mapstructure:"scaleway"`
+	BackBlaze    BackBlazeConfig       `mapstructure:"backblaze"`
 }
 
 // RateLimiterConfig holds rate limiter specific configuration.
 type RateLimiterConfig struct {
 	Max               int `mapstructure:"max"`               // Max requests per expiration window
 	ExpirationSeconds int `mapstructure:"expirationSeconds"` // Window duration in seconds
-}
-
-type NotifyChannel string
-
-const (
-	NotifyMock     NotifyChannel = "mock"
-	NotifyTelegram NotifyChannel = "telegram"
-	NotifySlack    NotifyChannel = "slack"
-)
-
-type EmailProvider string
-
-const (
-	EmailSendGrid EmailProvider = "sendgrid"
-	EmailBrevo    EmailProvider = "brevo"
-	EmailMock     EmailProvider = "mock"
-)
-
-type SMSProvider string
-
-const (
-	SMSProviderTwilio SMSProvider = "twilio"
-	SMSProviderBrevo  SMSProvider = "brevo"
-	SMSProviderMock   SMSProvider = "mock"
-)
-
-// AdapterConfig holds configuration for different notification adapters.
-type AdapterConfig struct {
-	Notify NotifyChannel `mapstructure:"notify"`
-	Email  EmailProvider `mapstructure:"email"`
-	SMS    SMSProvider   `mapstructure:"sms"`
-}
-
-// TelegramConfig holds Telegram specific configuration.
-type TelegramConfig struct {
-	BotToken string `mapstructure:"botToken"`
-	ChatID   string `mapstructure:"chatId"`
-	Debug    bool   `mapstructure:"debug"`
 }
 
 // SignozConfig holds Signoz specific configuration.

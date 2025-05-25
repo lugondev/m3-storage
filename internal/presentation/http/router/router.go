@@ -1,10 +1,9 @@
 package router
 
 import (
-	"github.com/lugondev/m3-storage/internal/interfaces/http/fiber/middleware"
 	mediaHandler "github.com/lugondev/m3-storage/internal/modules/media/handler"
 	storageHandler "github.com/lugondev/m3-storage/internal/modules/storage/handler"
-	userHandler "github.com/lugondev/m3-storage/internal/modules/user/handler"
+	"github.com/lugondev/m3-storage/internal/presentation/http/fiber/middleware"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/swagger"
@@ -14,7 +13,6 @@ import (
 type RouterConfig struct {
 	AuthMw         *middleware.AuthMiddleware
 	MediaHandler   *mediaHandler.MediaHandler
-	UserHandler    *userHandler.UserHandler // Use concrete type from handler package
 	StorageHandler *storageHandler.StorageHandler
 }
 
@@ -29,7 +27,6 @@ func RegisterRoutes(app *fiber.App, config *RouterConfig) {
 
 	// Register domain-specific route groups
 	registerMediaRoutes(v1, config.AuthMw, config.MediaHandler)
-	registerUserRoutes(v1, config.AuthMw, config.UserHandler)
 	registerStorageRoutes(v1, config.StorageHandler)
 }
 
@@ -66,17 +63,4 @@ func registerStorageRoutes(api fiber.Router, handler *storageHandler.StorageHand
 	storageRoutes := api.Group("/storage")
 	storageRoutes.Get("/health", handler.CheckHealth)
 	storageRoutes.Get("/health/all", handler.CheckHealthAll)
-}
-
-// registerUserRoutes handles all user domain routes
-// This follows DDD by keeping user operations in their own context
-func registerUserRoutes(api fiber.Router, authMw *middleware.AuthMiddleware, handler *userHandler.UserHandler) {
-	if handler == nil {
-		return // Gracefully handle missing handlers
-	}
-
-	userRoutes := api.Group("/users")
-
-	// User management operations
-	userRoutes.Get("/:id", authMw.RequireAuth(), handler.GetUserByID)
 }

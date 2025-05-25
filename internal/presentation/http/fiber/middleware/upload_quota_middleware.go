@@ -2,16 +2,15 @@ package middleware
 
 import (
 	"github.com/gofiber/fiber/v2"
-	"github.com/lugondev/m3-storage/internal/modules/user/domain"
-	"github.com/lugondev/m3-storage/internal/modules/user/port"
+	"github.com/lugondev/m3-storage/internal/infra/jwt"
 )
 
 // UploadQuotaMiddleware creates a Fiber middleware to check user's upload quotas.
 // This middleware should run AFTER an authentication middleware (like APIKeyAuthMiddleware)
 // that puts the user object into c.Locals().
-func UploadQuotaMiddleware(userService port.UserService) fiber.Handler {
+func UploadQuotaMiddleware() fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		user, ok := c.Locals(UserContextKey).(*domain.User)
+		user, ok := c.Locals(UserContextKey).(*jwt.JWTClaims)
 		if !ok || user == nil {
 			// This should not happen if auth middleware runs first and is correctly configured
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
@@ -47,20 +46,6 @@ func UploadQuotaMiddleware(userService port.UserService) fiber.Handler {
 				// The MediaValidator should handle the absolute max file size.
 				// This middleware focuses on user-specific quotas.
 			}
-		}
-
-		canUpload, err := userService.CanUpload(user.ID, fileSize) // fileSize might be 0 here
-		if err != nil {
-			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
-				"message": err.Error(), // e.g., "adapters quota exceeded", "daily file upload limit reached"
-			})
-		}
-		if !canUpload {
-			// This case might be redundant if CanUpload always returns an error when false,
-			// but it's a good safeguard.
-			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
-				"message": "Upload forbidden due to quota limits.",
-			})
 		}
 
 		return c.Next()

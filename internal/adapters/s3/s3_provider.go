@@ -75,18 +75,8 @@ func NewS3Provider(cfg config.S3Config, log logger.Logger) (port.StorageProvider
 	}
 
 	if endpointURL != "" {
-		// Custom resolver for S3-compatible adapters
-		customResolver := aws.EndpointResolverWithOptionsFunc(func(service, r string, options ...interface{}) (aws.Endpoint, error) {
-			if service == s3.ServiceID {
-				return aws.Endpoint{
-					URL:           endpointURL,
-					SigningRegion: r, // Use provided region or a default if necessary
-					// Source: aws.EndpointSourceCustom, // Optional: indicate it's a custom endpoint
-				}, nil
-			}
-			return aws.Endpoint{}, &aws.EndpointNotFoundError{}
-		})
-		cfgLoadOpts = append(cfgLoadOpts, awsConfig.WithEndpointResolverWithOptions(customResolver))
+		// Use the modern BaseEndpoint approach instead of deprecated EndpointResolver
+		cfgLoadOpts = append(cfgLoadOpts, awsConfig.WithBaseEndpoint(endpointURL))
 	}
 
 	awsCfg, err := awsConfig.LoadDefaultConfig(context.TODO(), cfgLoadOpts...)
