@@ -19,7 +19,7 @@ require (
 	github.com/golang-jwt/jwt/v5 v5.2.2
 	github.com/google/uuid v1.6.0
 	github.com/lugondev/go-log v0.1.0
-	github.com/lugondev/send-sen v1.0.3
+	github.com/lugondev/send-sen v1.0.5
 	github.com/nicksnyder/go-i18n/v2 v2.6.0
 	github.com/redis/go-redis/v9 v9.0.3
 	github.com/spf13/viper v1.20.1

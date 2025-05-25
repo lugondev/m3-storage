@@ -14,9 +14,8 @@ import (
 	infraJWT "github.com/lugondev/m3-storage/internal/infra/jwt"
 
 	logger "github.com/lugondev/go-log"
-	ssConfig "github.com/lugondev/send-sen/config"
-	ssPort "github.com/lugondev/send-sen/ports"
-	ssService "github.com/lugondev/send-sen/services"
+	sen "github.com/lugondev/send-sen"
+	senConfig "github.com/lugondev/send-sen/config"
 
 	// App Ports & Services (Health, Storage)
 	appPort "github.com/lugondev/m3-storage/internal/modules/app/port"
@@ -43,7 +42,7 @@ type Application struct {
 	CacheSvc   appPort.CacheService
 	StorageSvc appPort.StorageService
 	JWTSvc     *infraJWT.JWTService
-	NotifySvc  ssPort.NotifyService
+	NotifySvc  sen.NotifyService
 	MediaSvc   mediaPort.MediaService
 
 	// Handlers
@@ -82,7 +81,7 @@ func BuildDependencies(infra *Infrastructure) (*Application, error) {
 	log.Info(ctx, "JWT Service initialized successfully")
 
 	// Initialize Notify Service
-	app.NotifySvc, err = ssService.NewNotifyService(ssConfig.Config{
+	app.NotifySvc, err = sen.NewNotifyService(senConfig.Config{
 		Adapter:  cfg.Adapter,
 		Telegram: cfg.Telegram,
 	}, log)
