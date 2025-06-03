@@ -24,7 +24,7 @@ export interface UploadResponse {
 }
 
 export interface MediaListResponse {
-	media: MediaItem[];
+	data: MediaItem[];
 	total?: number;
 	page?: number;
 	page_size?: number;
@@ -59,14 +59,27 @@ function generateUUID() {
 	});
 }
 
-const apiClient = axios.create({
-	baseURL: process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080/api/v1',
+// Create separate clients for auth and app services
+const authApiClient = axios.create({
+	baseURL: process.env.NEXT_PUBLIC_API_AUTH_URL || 'http://localhost:8080/api/v1',
 	headers: {
 		'Content-Type': 'application/json',
 		'X-Request-ID': generateUUID(),
 	},
 	withCredentials: true,
 });
+
+const appApiClient = axios.create({
+	baseURL: process.env.NEXT_PUBLIC_API_APP_URL || 'http://localhost:8083/api/v1',
+	headers: {
+		'Content-Type': 'application/json',
+		'X-Request-ID': generateUUID(),
+	},
+	withCredentials: true,
+});
+
+// Keep the original apiClient for backward compatibility, defaulting to auth URL
+const apiClient = appApiClient;
 
 let isRefreshing = false;
 type FailedQueueItem = {
@@ -250,3 +263,4 @@ export const checkAllStorageHealth = async (): Promise<AllStorageHealthResponse>
 };
 
 export default apiClient;
+export { authApiClient, appApiClient };

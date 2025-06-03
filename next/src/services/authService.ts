@@ -1,4 +1,4 @@
-import apiClient from '@/lib/apiClient';
+import { authApiClient } from '@/lib/apiClient';
 import { signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 
@@ -90,24 +90,21 @@ export interface LoginOutput {
 
 export const exchangeFirebaseToken = async (data: SocialTokenExchangeInput): Promise<AuthResponse> => {
 	try {
-		// Expect AuthResponse from the backend endpoint
-		const response = await apiClient.post<AuthResponse>('/auth/social-token-exchange', data);
+		const response = await authApiClient.post<AuthResponse>('/auth/social-token-exchange', data);
 		return response.data;
 	} catch (error) {
 		console.error('Error exchanging Firebase token:', error);
-		throw error; // Re-throw the error to be handled by the caller
+		throw error;
 	}
 };
 
 export const signInWithEmail = async (data: LoginInput): Promise<LoginOutput> => {
 	try {
-		// Expect LoginOutput from the backend /auth/login endpoint
-		const response = await apiClient.post<LoginOutput>('/auth/login', data);
-		// AuthContext will handle storing tokens or prompting for 2FA
+		const response = await authApiClient.post<LoginOutput>('/auth/login', data);
 		return response.data;
 	} catch (error) {
 		console.error('Error signing in with email:', error);
-		throw error; // Re-throw to be handled by the caller (AuthContext/LoginForm)
+		throw error;
 	}
 };
 
@@ -119,10 +116,10 @@ export const refreshToken = async (currentRefreshToken: string): Promise<AuthRes
 	}
 
 	try {
-		const response = await apiClient.post<AuthResponse>('/auth/refresh', {
+		const response = await authApiClient.post<AuthResponse>('/auth/refresh', {
 			refresh_token: currentRefreshToken,
 		}, {
-			headers: { '__skipAuthRefresh': 'true' } // Prevent interceptor loop
+			headers: { '__skipAuthRefresh': 'true' }
 		});
 
 		// Caller (e.g., AuthContext) is responsible for storing response.data.auth
@@ -138,21 +135,21 @@ export const refreshToken = async (currentRefreshToken: string): Promise<AuthRes
 
 export const register = async (data: RegisterInput): Promise<AuthResponse> => {
 	try {
-		const response = await apiClient.post<AuthResponse>('/auth/register', data);
+		const response = await authApiClient.post<AuthResponse>('/auth/register', data);
 		return response.data;
 	} catch (error) {
 		console.error('Error during registration:', error);
-		throw error; // Re-throw to be handled by the caller
+		throw error;
 	}
 };
 
 export const verifyTwoFactorLogin = async (data: Verify2FARequest): Promise<LoginOutput> => {
 	try {
-		const response = await apiClient.post<LoginOutput>('/auth/login/verify-2fa', data);
+		const response = await authApiClient.post<LoginOutput>('/auth/login/verify-2fa', data);
 		return response.data;
 	} catch (error) {
 		console.error('Error during 2FA verification:', error);
-		throw error; // Re-throw to be handled by the caller
+		throw error;
 	}
 };
 
@@ -162,8 +159,8 @@ export const logoutUser = async (): Promise<void> => {
 
 	try {
 		// Notify backend about logout (best effort, don't block UI on failure)
-		await apiClient.post('/auth/logout', null, {
-			headers: { '__skipAuthRefresh': 'true' } // Avoid potential issues if tokens were already cleared
+		await authApiClient.post('/auth/logout', null, {
+			headers: { '__skipAuthRefresh': 'true' }
 		});
 		console.log('logoutUser service: Backend logout notification sent.');
 	} catch (error) {
@@ -189,7 +186,7 @@ export interface RequestLoginLinkInput {
 
 export const requestLoginLink = async (data: RequestLoginLinkInput): Promise<void> => {
 	try {
-		await apiClient.post('/api/v1/auth/login/request-link', data);
+		await authApiClient.post('/api/v1/auth/login/request-link', data);
 		console.log('Request login link email sent.');
 	} catch (error) {
 		console.error('Error requesting login link:', error);

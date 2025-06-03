@@ -28,21 +28,14 @@ definitions:
       user_id:
         type: string
     type: object
-  internal_modules_user_handler.ErrorResponse:
+  github_com_lugondev_m3-storage_internal_shared_errors.Error:
     properties:
+      code:
+        type: string
       message:
         type: string
-    type: object
-  internal_modules_user_handler.UserResponse:
-    properties:
-      email:
-        type: string
-      first_name:
-        type: string
-      id:
-        type: string
-      last_name:
-        type: string
+      status_code:
+        type: integer
     type: object
 host: localhost:8081
 info:
@@ -79,18 +72,10 @@ paths:
           schema:
             additionalProperties: true
             type: object
-        "401":
-          description: Unauthorized - missing or invalid JWT token
+        default:
+          description: ""
           schema:
-            additionalProperties:
-              type: string
-            type: object
-        "500":
-          description: Internal server error
-          schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/github_com_lugondev_m3-storage_internal_shared_errors.Error'
       security:
       - BearerAuth: []
       summary: List media files for the authenticated user with pagination
@@ -112,30 +97,10 @@ paths:
             additionalProperties:
               type: string
             type: object
-        "400":
-          description: Bad request - invalid media ID
+        default:
+          description: ""
           schema:
-            additionalProperties:
-              type: string
-            type: object
-        "401":
-          description: Unauthorized - missing or invalid JWT token
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "404":
-          description: Media file not found
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "500":
-          description: Internal server error
-          schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/github_com_lugondev_m3-storage_internal_shared_errors.Error'
       security:
       - BearerAuth: []
       summary: Delete a specific media file
@@ -156,30 +121,10 @@ paths:
           description: Media file details
           schema:
             $ref: '#/definitions/github_com_lugondev_m3-storage_internal_modules_media_domain.Media'
-        "400":
-          description: Bad request - invalid media ID
+        default:
+          description: ""
           schema:
-            additionalProperties:
-              type: string
-            type: object
-        "401":
-          description: Unauthorized - missing or invalid JWT token
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "404":
-          description: Media file not found
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "500":
-          description: Internal server error
-          schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/github_com_lugondev_m3-storage_internal_shared_errors.Error'
       security:
       - BearerAuth: []
       summary: Get a specific media file
@@ -210,29 +155,10 @@ paths:
       produces:
       - application/json
       responses:
-        "200":
-          description: File uploaded successfully with media details
+        default:
+          description: ""
           schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Bad request - missing file or invalid parameters
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "401":
-          description: Unauthorized - missing or invalid JWT token
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "500":
-          description: Internal server error
-          schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/github_com_lugondev_m3-storage_internal_shared_errors.Error'
       security:
       - BearerAuth: []
       summary: Upload a file
@@ -267,18 +193,10 @@ paths:
             additionalProperties:
               type: string
             type: object
-        "400":
-          description: Bad Request
+        default:
+          description: ""
           schema:
-            additionalProperties:
-              type: string
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/github_com_lugondev_m3-storage_internal_shared_errors.Error'
       summary: Check storage provider health
       tags:
       - storage
@@ -298,42 +216,13 @@ paths:
                 type: string
               type: object
             type: object
-        "500":
-          description: Internal Server Error
+        default:
+          description: ""
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/github_com_lugondev_m3-storage_internal_shared_errors.Error'
       summary: Check all storage providers health
       tags:
       - storage
-  /users/{id}:
-    get:
-      description: Retrieve user details by their unique ID.
-      parameters:
-      - description: User ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Successfully retrieved user
-          schema:
-            $ref: '#/definitions/internal_modules_user_handler.UserResponse'
-        "404":
-          description: User not found
-          schema:
-            $ref: '#/definitions/internal_modules_user_handler.ErrorResponse'
-        "500":
-          description: Internal server error
-          schema:
-            $ref: '#/definitions/internal_modules_user_handler.ErrorResponse'
-      summary: Get a user by ID
-      tags:
-      - Users
 schemes:
 - http
 - https

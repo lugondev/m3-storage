@@ -61,22 +61,10 @@ const docTemplate = `{
                             "additionalProperties": true
                         }
                     },
-                    "401": {
-                        "description": "Unauthorized - missing or invalid JWT token",
+                    "default": {
+                        "description": "",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/github_com_lugondev_m3-storage_internal_shared_errors.Error"
                         }
                     }
                 }
@@ -122,38 +110,10 @@ const docTemplate = `{
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "File uploaded successfully with media details",
+                    "default": {
+                        "description": "",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "400": {
-                        "description": "Bad request - missing file or invalid parameters",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized - missing or invalid JWT token",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/github_com_lugondev_m3-storage_internal_shared_errors.Error"
                         }
                     }
                 }
@@ -190,40 +150,10 @@ const docTemplate = `{
                             "$ref": "#/definitions/github_com_lugondev_m3-storage_internal_modules_media_domain.Media"
                         }
                     },
-                    "400": {
-                        "description": "Bad request - invalid media ID",
+                    "default": {
+                        "description": "",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized - missing or invalid JWT token",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Media file not found",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/github_com_lugondev_m3-storage_internal_shared_errors.Error"
                         }
                     }
                 }
@@ -258,40 +188,10 @@ const docTemplate = `{
                             }
                         }
                     },
-                    "400": {
-                        "description": "Bad request - invalid media ID",
+                    "default": {
+                        "description": "",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized - missing or invalid JWT token",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Media file not found",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/github_com_lugondev_m3-storage_internal_shared_errors.Error"
                         }
                     }
                 }
@@ -339,22 +239,10 @@ const docTemplate = `{
                             }
                         }
                     },
-                    "400": {
-                        "description": "Bad Request",
+                    "default": {
+                        "description": "",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/github_com_lugondev_m3-storage_internal_shared_errors.Error"
                         }
                     }
                 }
@@ -386,54 +274,10 @@ const docTemplate = `{
                             }
                         }
                     },
-                    "500": {
-                        "description": "Internal Server Error",
+                    "default": {
+                        "description": "",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/users/{id}": {
-            "get": {
-                "description": "Retrieve user details by their unique ID.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Users"
-                ],
-                "summary": "Get a user by ID",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "User ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Successfully retrieved user",
-                        "schema": {
-                            "$ref": "#/definitions/internal_modules_user_handler.UserResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "User not found",
-                        "schema": {
-                            "$ref": "#/definitions/internal_modules_user_handler.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "$ref": "#/definitions/internal_modules_user_handler.ErrorResponse"
+                            "$ref": "#/definitions/github_com_lugondev_m3-storage_internal_shared_errors.Error"
                         }
                     }
                 }
@@ -482,28 +326,17 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_modules_user_handler.ErrorResponse": {
+        "github_com_lugondev_m3-storage_internal_shared_errors.Error": {
             "type": "object",
             "properties": {
+                "code": {
+                    "type": "string"
+                },
                 "message": {
                     "type": "string"
-                }
-            }
-        },
-        "internal_modules_user_handler.UserResponse": {
-            "type": "object",
-            "properties": {
-                "email": {
-                    "type": "string"
                 },
-                "first_name": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "last_name": {
-                    "type": "string"
+                "status_code": {
+                    "type": "integer"
                 }
             }
         }

@@ -6,6 +6,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	logger "github.com/lugondev/go-log"
 	"github.com/lugondev/m3-storage/internal/modules/storage/port"
+	"github.com/lugondev/m3-storage/internal/shared/errors"
 )
 
 type StorageHandler struct {
@@ -28,8 +29,7 @@ func NewStorageHandler(factory port.StorageFactory, logger logger.Logger) *Stora
 // @Produce json
 // @Param provider_type query port.StorageProviderType true "Storage provider type"
 // @Success 200 {object} map[string]string
-// @Failure 400 {object} map[string]string
-// @Failure 500 {object} map[string]string
+// @Failure default {object} errors.Error
 // @Router /storage/health [get]
 func (h *StorageHandler) CheckHealth(c *fiber.Ctx) error {
 	rawProviderType := c.Query("provider_type")
@@ -44,19 +44,13 @@ func (h *StorageHandler) CheckHealth(c *fiber.Ctx) error {
 	provider, err := h.factory.CreateProvider(providerType)
 	if err != nil {
 		h.logger.Errorf(c.Context(), "Failed to create storage provider", map[string]any{"error": err, "provider_type": providerType})
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"status":  "error",
-			"message": "Invalid provider type: " + rawProviderType,
-		})
+		return errors.NewBadRequestError("invalid provider type")
 	}
 
 	err = provider.CheckHealth(c.Context())
 	if err != nil {
 		h.logger.Errorf(c.Context(), "Health check failed", map[string]any{"error": err})
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"status":  "error",
-			"message": err.Error(),
-		})
+		return errors.NewInternalServerError("health check failed")
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
@@ -71,7 +65,7 @@ func (h *StorageHandler) CheckHealth(c *fiber.Ctx) error {
 // @Accept json
 // @Produce json
 // @Success 200 {object} map[string]map[string]string
-// @Failure 500 {object} map[string]string
+// @Failure default {object} errors.Error
 // @Router /storage/health/all [get]
 func (h *StorageHandler) CheckHealthAll(c *fiber.Ctx) error {
 	results := make(map[string]map[string]string)

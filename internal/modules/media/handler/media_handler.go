@@ -10,6 +10,7 @@ import (
 	"github.com/lugondev/m3-storage/internal/modules/media/domain"
 	"github.com/lugondev/m3-storage/internal/modules/media/port"
 	"github.com/lugondev/m3-storage/internal/presentation/http/fiber/middleware"
+	"github.com/lugondev/m3-storage/internal/shared/errors"
 	"github.com/lugondev/m3-storage/internal/shared/utils"
 )
 
@@ -38,10 +39,7 @@ func NewMediaHandler(appLogger logger.Logger, mediaService port.MediaService) *M
 // @Param file formData file true "File to upload"
 // @Param provider formData string false "Storage provider (e.g., s3, azure, firebase, discord). If not specified, default provider will be used."
 // @Param media_type formData string false "Media type hint (e.g., image/jpeg, video/mp4). If not specified, it will be determined from the file."
-// @Success 200 {object} map[string]interface{} "File uploaded successfully with media details"
-// @Failure 400 {object} map[string]string "Bad request - missing file or invalid parameters"
-// @Failure 401 {object} map[string]string "Unauthorized - missing or invalid JWT token"
-// @Failure 500 {object} map[string]string "Internal server error"
+// @Failure default {object} errors.Error
 // @Router /media/upload [post]
 func (h *MediaHandler) UploadFile(c *fiber.Ctx) error {
 	userID, err := middleware.GetUserID(c)
@@ -98,8 +96,7 @@ func (h *MediaHandler) UploadFile(c *fiber.Ctx) error {
 // @Param page query int false "Page number (default: 1)"
 // @Param page_size query int false "Number of items per page (default: 10, max: 100)"
 // @Success 200 {object} map[string]interface{} "Paginated list of media files"
-// @Failure 401 {object} map[string]string "Unauthorized - missing or invalid JWT token"
-// @Failure 500 {object} map[string]string "Internal server error"
+// @Failure default {object} errors.Error
 // @Router /media [get]
 func (h *MediaHandler) ListMedia(c *fiber.Ctx) error {
 	userID, err := middleware.GetUserID(c)
@@ -112,7 +109,7 @@ func (h *MediaHandler) ListMedia(c *fiber.Ctx) error {
 	paginationQuery := &utils.PaginationQuery{}
 	if err = c.QueryParser(paginationQuery); err != nil {
 		h.logger.Warn(c.Context(), "Failed to parse pagination query", map[string]any{"error": err})
-		// Continue with default values
+		return errors.ErrInvalidInput
 	}
 
 	// Get paginated media files
@@ -138,10 +135,7 @@ func (h *MediaHandler) ListMedia(c *fiber.Ctx) error {
 // @Security BearerAuth
 // @Param id path string true "Media ID"
 // @Success 200 {object} domain.Media "Media file details"
-// @Failure 400 {object} map[string]string "Bad request - invalid media ID"
-// @Failure 401 {object} map[string]string "Unauthorized - missing or invalid JWT token"
-// @Failure 404 {object} map[string]string "Media file not found"
-// @Failure 500 {object} map[string]string "Internal server error"
+// @Failure default {object} errors.Error
 // @Router /media/{id} [get]
 func (h *MediaHandler) GetMedia(c *fiber.Ctx) error {
 	userID, err := middleware.GetUserID(c)
@@ -154,9 +148,7 @@ func (h *MediaHandler) GetMedia(c *fiber.Ctx) error {
 	mediaID, err := uuid.Parse(c.Params("id"))
 	if err != nil {
 		h.logger.Warn(c.Context(), "Invalid media ID format", map[string]any{"mediaID": c.Params("id")})
-		return c.Status(http.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid media ID format",
-		})
+		return errors.ErrInvalidInput
 	}
 
 	// Get the media file
@@ -168,9 +160,7 @@ func (h *MediaHandler) GetMedia(c *fiber.Ctx) error {
 			})
 		}
 		h.logger.Error(c.Context(), "Failed to get media file", map[string]any{"error": err})
-		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
-			"error": fmt.Sprintf("Failed to get media file: %v", err),
-		})
+		return err
 	}
 
 	return c.Status(http.StatusOK).JSON(media)
@@ -183,10 +173,7 @@ func (h *MediaHandler) GetMedia(c *fiber.Ctx) error {
 // @Security BearerAuth
 // @Param id path string true "Media ID"
 // @Success 200 {object} map[string]string "Media file deleted successfully"
-// @Failure 400 {object} map[string]string "Bad request - invalid media ID"
-// @Failure 401 {object} map[string]string "Unauthorized - missing or invalid JWT token"
-// @Failure 404 {object} map[string]string "Media file not found"
-// @Failure 500 {object} map[string]string "Internal server error"
+// @Failure default {object} errors.Error
 // @Router /media/{id} [delete]
 func (h *MediaHandler) DeleteMedia(c *fiber.Ctx) error {
 	userID, err := middleware.GetUserID(c)
