@@ -12,6 +12,7 @@ import {Skeleton} from '@/components/ui/skeleton'
 import {uploadMedia, listMedia, deleteMedia, type MediaItem, type UploadResponse, type MediaListResponse} from '@/lib/apiClient'
 import {Upload, X, Download, Eye, Trash2, Search, Filter} from 'lucide-react'
 import {toast} from 'sonner'
+import ImageViewerModal from '@/components/ImageViewerModal'
 
 const MediaManagementPage = () => {
 	const [mediaItems, setMediaItems] = useState<MediaItem[]>([])
@@ -20,13 +21,22 @@ const MediaManagementPage = () => {
 	const [searchTerm, setSearchTerm] = useState('')
 	const [selectedFiles, setSelectedFiles] = useState<File[]>([])
 	const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({})
+	const [viewerItem, setViewerItem] = useState<MediaItem | null>(null)
+	const [isViewerOpen, setIsViewerOpen] = useState(false)
 
 	// Fetch media items
 	const fetchMedia = async () => {
 		try {
 			setLoading(true)
 			const response: MediaListResponse = await listMedia()
-			setMediaItems(response.data || [])
+			setMediaItems(
+				response.data.map((item) => {
+					return {
+						...item,
+						public_url: item.provider == 'local' ? process.env.NEXT_PUBLIC_MEDIA_URL + item.public_url : item.public_url,
+					}
+				}) || [],
+			)
 		} catch (error) {
 			console.error('Failed to fetch media:', error)
 			toast.error('Failed to load media items')
@@ -271,7 +281,14 @@ const MediaManagementPage = () => {
 												</div>
 												<p className='text-xs text-gray-400'>{new Date(item.created_at).toLocaleDateString()}</p>
 												<div className='flex gap-1'>
-													<Button variant='outline' size='sm' className='flex-1' onClick={() => window.open(item.public_url, '_blank')}>
+													<Button
+														variant='outline'
+														size='sm'
+														className='flex-1'
+														onClick={() => {
+															setViewerItem(item)
+															setIsViewerOpen(true)
+														}}>
 														<Eye className='h-3 w-3 mr-1' />
 														View
 													</Button>
@@ -299,6 +316,18 @@ const MediaManagementPage = () => {
 					</CardContent>
 				</Card>
 			</div>
+
+			{/* Image Viewer Modal */}
+			<ImageViewerModal
+				item={viewerItem}
+				open={isViewerOpen && viewerItem !== null}
+				onOpenChange={(open) => {
+					setIsViewerOpen(open)
+					if (!open) {
+						setViewerItem(null)
+					}
+				}}
+			/>
 		</PageContainer>
 	)
 }

@@ -115,7 +115,7 @@ func BuildDependencies(infra *Infrastructure) (*Application, error) {
 
 	// --- Initialize Media Module ---
 	app.MediaSvc = mediaService.NewMediaService(infra.DB, log, sFactory)
-	app.MediaHandler = mediaHandler.NewMediaHandler(log, app.MediaSvc)
+	app.MediaHandler = mediaHandler.NewMediaHandler(log, app.MediaSvc, infra.Config)
 	log.Info(ctx, "Media module initialized")
 
 	log.Info(ctx, "Handlers initialized")

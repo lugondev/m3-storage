@@ -192,6 +192,11 @@ func (s *mediaService) ListMedia(ctx context.Context, userID uuid.UUID, query *u
 		return nil, nil, fmt.Errorf("failed to list media files: %w", err)
 	}
 
+	// Replace public_url for local storage media
+	for _, media := range mediaFiles {
+		s.handleLocalMediaURL(media)
+	}
+
 	pagination := utils.NewPagination(*query, totalItems)
 
 	return &pagination, mediaFiles, nil
@@ -216,6 +221,33 @@ func (s *mediaService) GetMedia(ctx context.Context, userID uuid.UUID, mediaID u
 		s.logger.Error(ctx, "Failed to get media file", map[string]any{"error": err})
 		return nil, fmt.Errorf("failed to get media file: %w", err)
 	}
+
+	// Replace public_url for local storage
+	s.handleLocalMediaURL(&media)
+
+	return &media, nil
+}
+
+// GetPublicMedia retrieves a specific media file by ID without user authentication
+func (s *mediaService) GetPublicMedia(ctx context.Context, mediaID uuid.UUID) (*domain.Media, error) {
+	s.logger.Info(ctx, "Getting public media file", map[string]any{
+		"mediaID": mediaID.String(),
+	})
+
+	var media domain.Media
+	if err := s.db.Where("id = ?", mediaID).First(&media).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			s.logger.Warn(ctx, "Public media file not found", map[string]any{
+				"mediaID": mediaID.String(),
+			})
+			return nil, fmt.Errorf("media file not found")
+		}
+		s.logger.Error(ctx, "Failed to get public media file", map[string]any{"error": err})
+		return nil, fmt.Errorf("failed to get media file: %w", err)
+	}
+
+	// Replace public_url for local storage
+	s.handleLocalMediaURL(&media)
 
 	return &media, nil
 }
@@ -260,4 +292,12 @@ func (s *mediaService) DeleteMedia(ctx context.Context, userID uuid.UUID, mediaI
 
 	s.logger.Info(ctx, "Media file deleted successfully", map[string]any{"mediaID": mediaID.String()})
 	return nil
+}
+
+// handleLocalMediaURL replaces the public_url for local storage media with handler URL
+func (s *mediaService) handleLocalMediaURL(media *domain.Media) {
+	if media.Provider == "local" {
+		// Replace the public_url with a handler URL that will serve the file
+		media.PublicURL = fmt.Sprintf("/api/v1/media/public/%s/file", media.ID.String())
+	}
 }

@@ -46,7 +46,11 @@ func registerMediaRoutes(api fiber.Router, authMw *middleware.AuthMiddleware, ha
 	// TODO: Add other media operations following RESTful patterns
 	mediaRoutes.Get("/", authMw.RequireAuth(), handler.ListMedia)
 	mediaRoutes.Get("/:id", authMw.RequireAuth(), handler.GetMedia)
+	mediaRoutes.Get("/:id/file", authMw.RequireAuth(), handler.ServeLocalFile)
 	mediaRoutes.Delete("/:id", authMw.RequireAuth(), handler.DeleteMedia)
+
+	// Public routes - no authentication required
+	mediaRoutes.Get("/public/:id/file", handler.ServePublicLocalFile)
 }
 
 // registerStorageRoutes handles storage-related routes

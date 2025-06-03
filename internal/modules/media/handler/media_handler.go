@@ -7,6 +7,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 	logger "github.com/lugondev/go-log" // Import custom logger
+	"github.com/lugondev/m3-storage/internal/infra/config"
 	"github.com/lugondev/m3-storage/internal/modules/media/domain"
 	"github.com/lugondev/m3-storage/internal/modules/media/port"
 	"github.com/lugondev/m3-storage/internal/presentation/http/fiber/middleware"
@@ -19,13 +20,15 @@ var _ domain.Media
 type MediaHandler struct {
 	logger       logger.Logger
 	mediaService port.MediaService
+	config       *config.Config
 }
 
 // NewMediaHandler creates a new MediaHandler.
-func NewMediaHandler(appLogger logger.Logger, mediaService port.MediaService) *MediaHandler {
+func NewMediaHandler(appLogger logger.Logger, mediaService port.MediaService, cfg *config.Config) *MediaHandler {
 	return &MediaHandler{
 		logger:       appLogger.WithFields(map[string]any{"component": "MediaHandler"}),
 		mediaService: mediaService,
+		config:       cfg,
 	}
 }
 
@@ -207,4 +210,94 @@ func (h *MediaHandler) DeleteMedia(c *fiber.Ctx) error {
 	return c.Status(http.StatusOK).JSON(fiber.Map{
 		"message": "Media file deleted successfully",
 	})
+}
+
+// ServeLocalFile godoc
+// @Summary Serve a local media file
+// @Description Serve a local media file by ID for authenticated users
+// @Tags Media
+// @Produce application/octet-stream
+// @Security BearerAuth
+// @Param id path string true "Media ID"
+// @Success 200 {file} file "Media file content"
+// @Failure 404 {object} fiber.Map "Media file not found"
+// @Failure 403 {object} fiber.Map "Access denied"
+// @Failure 500 {object} fiber.Map "Internal server error"
+// @Router /media/{id}/file [get]
+func (h *MediaHandler) ServeLocalFile(c *fiber.Ctx) error {
+	userID, err := middleware.GetUserID(c)
+	if err != nil {
+		h.logger.Error(c.Context(), "Failed to get userID from claims", map[string]any{"error": err})
+		return err
+	}
+
+	// Parse media ID from path parameter
+	mediaID, err := uuid.Parse(c.Params("id"))
+	if err != nil {
+		h.logger.Warn(c.Context(), "Invalid media ID format", map[string]any{"mediaID": c.Params("id")})
+		return errors.ErrInvalidInput
+	}
+
+	// Get the media file
+	media, err := h.mediaService.GetMedia(c.Context(), userID, mediaID)
+	if err != nil {
+		if err.Error() == "media file not found" {
+			return c.Status(http.StatusNotFound).JSON(fiber.Map{
+				"error": "Media file not found",
+			})
+		}
+		h.logger.Error(c.Context(), "Failed to get media file", map[string]any{"error": err})
+		return err
+	}
+
+	// Check if this is a local storage file
+	if media.Provider != "local" {
+		return c.Status(http.StatusBadRequest).JSON(fiber.Map{
+			"error": "This endpoint only serves local storage files",
+		})
+	}
+
+	// Serve the file directly from the local file system
+	return c.SendFile(h.config.LocalStorage.Path + "/" + media.FilePath)
+}
+
+// ServePublicLocalFile godoc
+// @Summary Serve a public local media file
+// @Description Serve a local media file without authentication
+// @Tags Media
+// @Produce application/octet-stream
+// @Param id path string true "Media ID"
+// @Success 200 {file} file "Media file content"
+// @Failure 404 {object} fiber.Map "Media file not found"
+// @Failure 500 {object} fiber.Map "Internal server error"
+// @Router /media/public/{id}/file [get]
+func (h *MediaHandler) ServePublicLocalFile(c *fiber.Ctx) error {
+	// Parse media ID from path parameter
+	mediaID, err := uuid.Parse(c.Params("id"))
+	if err != nil {
+		h.logger.Warn(c.Context(), "Invalid media ID format", map[string]any{"mediaID": c.Params("id")})
+		return errors.ErrInvalidInput
+	}
+
+	// Get the media file without user authentication
+	media, err := h.mediaService.GetPublicMedia(c.Context(), mediaID)
+	if err != nil {
+		if err.Error() == "media file not found" {
+			return c.Status(http.StatusNotFound).JSON(fiber.Map{
+				"error": "Media file not found",
+			})
+		}
+		h.logger.Error(c.Context(), "Failed to get public media file", map[string]any{"error": err})
+		return err
+	}
+
+	// Check if this is a local storage file
+	if media.Provider != "local" {
+		return c.Status(http.StatusBadRequest).JSON(fiber.Map{
+			"error": "This endpoint only serves local storage files",
+		})
+	}
+
+	// Serve the file directly from the local file system
+	return c.SendFile(h.config.LocalStorage.Path + "/" + media.FilePath)
 }

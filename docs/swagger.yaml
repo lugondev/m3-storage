@@ -1,5 +1,8 @@
 basePath: /api/v1
 definitions:
+  fiber.Map:
+    additionalProperties: true
+    type: object
   github_com_lugondev_m3-storage_internal_modules_media_domain.Media:
     properties:
       created_at:
@@ -163,6 +166,66 @@ paths:
       security:
       - BearerAuth: []
       summary: Get a specific media file
+      tags:
+      - Media
+  /media/{id}/file:
+    get:
+      description: Serve a local media file by ID for authenticated users
+      parameters:
+      - description: Media ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: Media file content
+          schema:
+            type: file
+        "403":
+          description: Access denied
+          schema:
+            $ref: '#/definitions/fiber.Map'
+        "404":
+          description: Media file not found
+          schema:
+            $ref: '#/definitions/fiber.Map'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/fiber.Map'
+      security:
+      - BearerAuth: []
+      summary: Serve a local media file
+      tags:
+      - Media
+  /media/public/{id}/file:
+    get:
+      description: Serve a local media file without authentication
+      parameters:
+      - description: Media ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: Media file content
+          schema:
+            type: file
+        "404":
+          description: Media file not found
+          schema:
+            $ref: '#/definitions/fiber.Map'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/fiber.Map'
+      summary: Serve a public local media file
       tags:
       - Media
   /media/upload:
