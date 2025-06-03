@@ -15,6 +15,7 @@ import (
 type StorageService interface {
 	CheckHealth(ctx context.Context, req *dto.HealthCheckRequest) (*dto.HealthCheckResponse, error)
 	CheckHealthAll(ctx context.Context) (*dto.HealthCheckAllResponse, error)
+	ListProviders(ctx context.Context) (*dto.ListProvidersResponse, error)
 }
 
 type storageService struct {
@@ -114,6 +115,56 @@ func (s *storageService) CheckHealthAll(ctx context.Context) (*dto.HealthCheckAl
 
 	return &dto.HealthCheckAllResponse{
 		Providers: results,
+	}, nil
+}
+
+// ListProviders returns a list of all available storage providers
+func (s *storageService) ListProviders(ctx context.Context) (*dto.ListProvidersResponse, error) {
+	providers := []dto.ProviderInfo{
+		{
+			Type:        string(domain.ProviderS3),
+			Name:        "Amazon S3",
+			Description: "Amazon Simple Storage Service",
+		},
+		{
+			Type:        string(domain.ProviderCloudflareR2),
+			Name:        "Cloudflare R2",
+			Description: "Cloudflare R2 Object Storage",
+		},
+		{
+			Type:        string(domain.ProviderLocal),
+			Name:        "Local Storage",
+			Description: "Local file system storage",
+		},
+		{
+			Type:        string(domain.ProviderFirebase),
+			Name:        "Firebase Storage",
+			Description: "Google Firebase Cloud Storage",
+		},
+		{
+			Type:        string(domain.ProviderAzure),
+			Name:        "Azure Blob Storage",
+			Description: "Microsoft Azure Blob Storage",
+		},
+		{
+			Type:        string(domain.ProviderDiscord),
+			Name:        "Discord CDN",
+			Description: "Discord Content Delivery Network",
+		},
+		{
+			Type:        string(domain.ProviderScaleway),
+			Name:        "Scaleway Object Storage",
+			Description: "Scaleway Object Storage Service",
+		},
+		{
+			Type:        string(domain.ProviderBackBlaze),
+			Name:        "Backblaze B2",
+			Description: "Backblaze B2 Cloud Storage",
+		},
+	}
+
+	return &dto.ListProvidersResponse{
+		Providers: providers,
 	}, nil
 }
 

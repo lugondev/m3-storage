@@ -212,16 +212,6 @@ const docTemplate = `{
                 "summary": "Check storage provider health",
                 "parameters": [
                     {
-                        "enum": [
-                            "s3",
-                            "cloudflare_r2",
-                            "local",
-                            "firebase",
-                            "azure",
-                            "discord",
-                            "scaleway",
-                            "backblaze"
-                        ],
                         "type": "string",
                         "description": "Storage provider type",
                         "name": "provider_type",
@@ -233,10 +223,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/github_com_lugondev_m3-storage_internal_modules_storage_dto.HealthCheckResponse"
                         }
                     },
                     "default": {
@@ -265,13 +252,36 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "object",
-                                "additionalProperties": {
-                                    "type": "string"
-                                }
-                            }
+                            "$ref": "#/definitions/github_com_lugondev_m3-storage_internal_modules_storage_dto.HealthCheckAllResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_lugondev_m3-storage_internal_shared_errors.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/storage/providers": {
+            "get": {
+                "description": "Get a list of all supported storage provider types with their information",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "storage"
+                ],
+                "summary": "List all available storage providers",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_lugondev_m3-storage_internal_modules_storage_dto.ListProvidersResponse"
                         }
                     },
                     "default": {
@@ -326,6 +336,58 @@ const docTemplate = `{
                 }
             }
         },
+        "github_com_lugondev_m3-storage_internal_modules_storage_dto.HealthCheckAllResponse": {
+            "type": "object",
+            "properties": {
+                "providers": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/definitions/github_com_lugondev_m3-storage_internal_modules_storage_dto.HealthCheckResponse"
+                    }
+                }
+            }
+        },
+        "github_com_lugondev_m3-storage_internal_modules_storage_dto.HealthCheckResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": ""
+                },
+                "status": {
+                    "type": "string",
+                    "example": "healthy"
+                }
+            }
+        },
+        "github_com_lugondev_m3-storage_internal_modules_storage_dto.ListProvidersResponse": {
+            "type": "object",
+            "properties": {
+                "providers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_lugondev_m3-storage_internal_modules_storage_dto.ProviderInfo"
+                    }
+                }
+            }
+        },
+        "github_com_lugondev_m3-storage_internal_modules_storage_dto.ProviderInfo": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "example": "Amazon Simple Storage Service"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Amazon S3"
+                },
+                "type": {
+                    "type": "string",
+                    "example": "s3"
+                }
+            }
+        },
         "github_com_lugondev_m3-storage_internal_shared_errors.Error": {
             "type": "object",
             "properties": {
@@ -353,7 +415,7 @@ const docTemplate = `{
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
-	Host:             "localhost:8081",
+	Host:             "localhost:8083",
 	BasePath:         "/api/v1",
 	Schemes:          []string{"http", "https"},
 	Title:            "AuthSys API",

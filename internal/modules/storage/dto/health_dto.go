@@ -15,3 +15,15 @@ type HealthCheckResponse struct {
 type HealthCheckAllResponse struct {
 	Providers map[string]HealthCheckResponse `json:"providers"`
 }
+
+// ProviderInfo represents information about a storage provider
+type ProviderInfo struct {
+	Type        string `json:"type" example:"s3"`
+	Name        string `json:"name" example:"Amazon S3"`
+	Description string `json:"description" example:"Amazon Simple Storage Service"`
+}
+
+// ListProvidersResponse represents the response for listing available providers
+type ListProvidersResponse struct {
+	Providers []ProviderInfo `json:"providers"`
+}

@@ -28,6 +28,41 @@ definitions:
       user_id:
         type: string
     type: object
+  github_com_lugondev_m3-storage_internal_modules_storage_dto.HealthCheckAllResponse:
+    properties:
+      providers:
+        additionalProperties:
+          $ref: '#/definitions/github_com_lugondev_m3-storage_internal_modules_storage_dto.HealthCheckResponse'
+        type: object
+    type: object
+  github_com_lugondev_m3-storage_internal_modules_storage_dto.HealthCheckResponse:
+    properties:
+      message:
+        example: ""
+        type: string
+      status:
+        example: healthy
+        type: string
+    type: object
+  github_com_lugondev_m3-storage_internal_modules_storage_dto.ListProvidersResponse:
+    properties:
+      providers:
+        items:
+          $ref: '#/definitions/github_com_lugondev_m3-storage_internal_modules_storage_dto.ProviderInfo'
+        type: array
+    type: object
+  github_com_lugondev_m3-storage_internal_modules_storage_dto.ProviderInfo:
+    properties:
+      description:
+        example: Amazon Simple Storage Service
+        type: string
+      name:
+        example: Amazon S3
+        type: string
+      type:
+        example: s3
+        type: string
+    type: object
   github_com_lugondev_m3-storage_internal_shared_errors.Error:
     properties:
       code:
@@ -37,7 +72,7 @@ definitions:
       status_code:
         type: integer
     type: object
-host: localhost:8081
+host: localhost:8083
 info:
   contact:
     email: support@swagger.io
@@ -171,15 +206,6 @@ paths:
       description: Check if the storage provider is healthy and accessible
       parameters:
       - description: Storage provider type
-        enum:
-        - s3
-        - cloudflare_r2
-        - local
-        - firebase
-        - azure
-        - discord
-        - scaleway
-        - backblaze
         in: query
         name: provider_type
         required: true
@@ -190,9 +216,7 @@ paths:
         "200":
           description: OK
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/github_com_lugondev_m3-storage_internal_modules_storage_dto.HealthCheckResponse'
         default:
           description: ""
           schema:
@@ -211,16 +235,31 @@ paths:
         "200":
           description: OK
           schema:
-            additionalProperties:
-              additionalProperties:
-                type: string
-              type: object
-            type: object
+            $ref: '#/definitions/github_com_lugondev_m3-storage_internal_modules_storage_dto.HealthCheckAllResponse'
         default:
           description: ""
           schema:
             $ref: '#/definitions/github_com_lugondev_m3-storage_internal_shared_errors.Error'
       summary: Check all storage providers health
+      tags:
+      - storage
+  /storage/providers:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of all supported storage provider types with their information
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_lugondev_m3-storage_internal_modules_storage_dto.ListProvidersResponse'
+        default:
+          description: ""
+          schema:
+            $ref: '#/definitions/github_com_lugondev_m3-storage_internal_shared_errors.Error'
+      summary: List all available storage providers
       tags:
       - storage
 schemes:

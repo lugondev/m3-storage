@@ -52,6 +52,7 @@ func registerMediaRoutes(api fiber.Router, authMw *middleware.AuthMiddleware, ha
 // registerStorageRoutes handles storage-related routes
 func registerStorageRoutes(api fiber.Router, handler *storageHandler.StorageHandler) {
 	storageRoutes := api.Group("/storage")
+	storageRoutes.Get("/providers", handler.ListProviders)
 	storageRoutes.Get("/health", handler.CheckHealth)
 	storageRoutes.Get("/health/all", handler.CheckHealthAll)
 }
