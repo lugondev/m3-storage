@@ -1,7 +1,10 @@
 import React from 'react'
 import {Button} from '@/components/ui/button'
-import {Menu} from 'lucide-react'
+import {Menu, User, LogOut, Settings} from 'lucide-react'
+import {DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger} from '@/components/ui/dropdown-menu'
+import Link from 'next/link'
 import Breadcrumbs from './Breadcrumbs' // Import Breadcrumbs
+// TODO: Add sign out functionality from AuthContext
 
 interface HeaderProps {
 	onMenuButtonClick: () => void
@@ -21,8 +24,37 @@ const Header: React.FC<HeaderProps> = ({onMenuButtonClick}) => {
 					<Breadcrumbs />
 				</div>
 			</div>
-			{/* Right side: Tenant Switcher and User Profile Section */}
-			<div className='flex items-center space-x-4'>{/* <TenantSwitcher /> Add Tenant Switcher here */}</div>
+			{/* Right side: User Profile Section */}
+			<DropdownMenu>
+				<DropdownMenuTrigger asChild>
+					<Button variant='ghost' size='icon' aria-label='User profile'>
+						<User className='h-6 w-6 text-gray-600 dark:text-gray-300' />
+					</Button>
+				</DropdownMenuTrigger>
+				<DropdownMenuContent align='end'>
+					<DropdownMenuLabel>My Account</DropdownMenuLabel>
+					<DropdownMenuSeparator />
+					<DropdownMenuItem asChild>
+						<Link href='/profile'>
+							<User className='mr-2 h-4 w-4' />
+							<span>Profile</span>
+						</Link>
+					</DropdownMenuItem>
+					<DropdownMenuItem asChild>
+						<Link href='/settings'>
+							<Settings className='mr-2 h-4 w-4' />
+							<span>Settings</span>
+						</Link>
+					</DropdownMenuItem>
+					<DropdownMenuSeparator />
+					<DropdownMenuItem onClick={() => alert('Sign out clicked!')}>
+						{' '}
+						{/* TODO: Implement actual sign out */}
+						<LogOut className='mr-2 h-4 w-4' />
+						<span>Sign out</span>
+					</DropdownMenuItem>
+				</DropdownMenuContent>
+			</DropdownMenu>
 		</header>
 	)
 }

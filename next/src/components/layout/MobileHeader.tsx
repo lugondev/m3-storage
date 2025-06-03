@@ -3,7 +3,7 @@
 import {Button} from '@/components/ui/button'
 import {Menu} from 'lucide-react'
 import {Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger} from '@/components/ui/sheet'
-import Sidebar from './Sidebar'
+import {Sidebar} from './Sidebar'
 
 export function MobileHeader() {
 	return (
@@ -23,7 +23,7 @@ export function MobileHeader() {
 				</SheetContent>
 			</Sheet>
 			<div className='flex-1'>
-				<h1 className='text-lg font-semibold'>Auth System</h1>
+				<h1 className='text-lg font-semibold'>Admin Panel</h1>
 			</div>
 		</div>
 	)
