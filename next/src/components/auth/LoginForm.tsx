@@ -40,17 +40,12 @@ export function LoginForm() {
 
 	async function onSubmit(values: z.infer<typeof formSchema>) {
 		setLoading(true)
+		setLoading(true)
 		setError(null)
 		console.log('Attempting email/password sign in with:', values)
-
-		const payload: {email: string; password: string} = {
-			email: values.email,
-			password: values.password,
-		}
-
 		try {
 			// Call signInWithEmail and check the result
-			const result = await signInWithEmail(payload)
+			const result = await signInWithEmail({email: values.email, password: values.password})
 
 			if (result.success && result.twoFactorRequired && result.sessionToken) {
 				// 2FA is required. AuthContext now stores the token.
@@ -92,6 +87,7 @@ export function LoginForm() {
 		},
 	})
 
+	// Handler for 2FA form submission
 	// Handler for 2FA form submission
 	async function onTwoFactorSubmit(values: z.infer<typeof twoFactorSchema>) {
 		setLoading(true)
@@ -214,7 +210,6 @@ export function LoginForm() {
 						</FormItem>
 					)}
 				/>
-
 				{error && <p className='text-sm text-red-500'>{error}</p>}
 				<Button type='submit' className='w-full' disabled={loading}>
 					{loading ? 'Signing in...' : 'Sign in with Email'}

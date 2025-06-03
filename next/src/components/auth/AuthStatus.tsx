@@ -5,7 +5,6 @@ import {Button} from '@/components/ui/button'
 import {Skeleton} from '@/components/ui/skeleton'
 import {DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger} from '@/components/ui/dropdown-menu'
 import {Avatar, AvatarFallback, AvatarImage} from '@/components/ui/avatar'
-import Link from 'next/link' // Import Link for navigation
 
 export function AuthStatus() {
 	const {user, isAuthenticated, logout, loading} = useAuth()
@@ -46,10 +45,6 @@ export function AuthStatus() {
 						<p className='text-xs leading-none text-muted-foreground'>{user.email}</p>
 					</div>
 				</DropdownMenuLabel>
-				<DropdownMenuSeparator />
-				<Link href='/dashboard/profile' passHref>
-					<DropdownMenuItem>Profile</DropdownMenuItem>
-				</Link>
 				<DropdownMenuSeparator />
 				<DropdownMenuItem onClick={logout} disabled={loading}>
 					{loading ? 'Signing out...' : 'Sign out'}

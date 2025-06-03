@@ -4,7 +4,7 @@ import React, {useState} from 'react' // Import useState
 import Link from 'next/link'
 import {usePathname} from 'next/navigation'
 import {cn} from '@/lib/utils'
-import {Building, Settings, BarChart, LayoutDashboard, ChevronDown, CreditCard} from 'lucide-react' // Removed Grid3x3 icon, Added ShieldCheck
+import {Settings, BarChart, LayoutDashboard, ChevronDown, CreditCard, Upload} from 'lucide-react' // Removed Grid3x3 icon, Added ShieldCheck
 import {Collapsible, CollapsibleContent, CollapsibleTrigger} from '@/components/ui/collapsible' // Import Collapsible
 
 interface NavItem {
@@ -22,8 +22,12 @@ interface SidebarProps {
 // TODO: Move this to a config file or context later for better management
 const navItems: NavItem[] = [
 	{href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard},
-	{href: '/dashboard/venues', label: 'Venues', icon: Building},
 	{href: '/dashboard/analytics', label: 'Analytics', icon: BarChart, disabled: true}, // Example disabled item
+	{
+		label: 'Media',
+		href: '/dashboard/media',
+		icon: Upload, // Import from lucide-react
+	},
 	{
 		// Collapsible Settings section
 		label: 'Settings',

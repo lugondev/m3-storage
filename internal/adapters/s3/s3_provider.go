@@ -79,7 +79,7 @@ func NewS3Provider(cfg config.S3Config, log logger.Logger) (port.StorageProvider
 		cfgLoadOpts = append(cfgLoadOpts, awsConfig.WithBaseEndpoint(endpointURL))
 	}
 
-	awsCfg, err := awsConfig.LoadDefaultConfig(context.TODO(), cfgLoadOpts...)
+	awsCfg, err := awsConfig.LoadDefaultConfig(context.Background(), cfgLoadOpts...)
 	if err != nil {
 		log.Errorf(context.Background(), "Failed to load AWS SDK config", map[string]any{"error": err})
 		return nil, fmt.Errorf("failed to load AWS config: %w", err)
@@ -164,7 +164,7 @@ func (p *s3Provider) Upload(ctx context.Context, key string, reader io.Reader, s
 		return nil, fmt.Errorf("failed to get metadata for S3 key %s: %w", key, err)
 	}
 
-	fileURL := p.generateObjectURL(key)
+	fileURL := p.generateObjectURL(ctx, key)
 	if p.endpointURL != "" && !strings.HasPrefix(p.endpointURL, "https://s3.") && !strings.HasSuffix(p.endpointURL, ".amazonaws.com") {
 		// For non-AWS S3-compatible services, the URL might be different
 		fileURL = fmt.Sprintf("%s/%s/%s", strings.TrimSuffix(p.endpointURL, "/"), p.bucketName, strings.TrimPrefix(key, "/"))
@@ -182,7 +182,7 @@ func (p *s3Provider) Upload(ctx context.Context, key string, reader io.Reader, s
 	}, nil
 }
 
-func (p *s3Provider) generateObjectURL(key string) string {
+func (p *s3Provider) generateObjectURL(ctx context.Context, key string) string {
 	// Standard S3 URL format: https://<bucket-name>.s3.<region>.amazonaws.com/<key>
 	// Or path-style: https://s3.<region>.amazonaws.com/<bucket-name>/<key>
 	// If a custom endpoint is used, it might be different.
@@ -202,7 +202,8 @@ func (p *s3Provider) generateObjectURL(key string) string {
 
 	// Default AWS S3 URL
 	if p.region == "" { // Should not happen if configured correctly for AWS
-		p.logger.Warn(context.Background(), "S3 region is empty, cannot construct standard AWS S3 URL accurately.", map[string]any{"key": key})
+		// Using Warn without context as this is an internal utility method
+		p.logger.Warn(nil, "S3 region is empty, cannot construct standard AWS S3 URL accurately.", map[string]any{"key": key})
 		return "" // Or some other placeholder
 	}
 	return fmt.Sprintf("https://%s.s3.%s.amazonaws.com/%s", p.bucketName, p.region, strings.TrimPrefix(key, "/"))
@@ -227,7 +228,7 @@ func (p *s3Provider) GetURL(ctx context.Context, key string) (string, error) {
 		p.logger.Errorf(ctx, "Failed to HeadObject for GetURL", map[string]any{"key": key, "error": err})
 		return "", fmt.Errorf("failed to check object %s: %w", key, err)
 	}
-	return p.generateObjectURL(key), nil
+	return p.generateObjectURL(ctx, key), nil
 }
 
 // GetSignedURL generates a time-limited signed URL for accessing a private object.
@@ -282,7 +283,7 @@ func (p *s3Provider) GetObject(ctx context.Context, key string) (*port.FileObjec
 
 	return &port.FileObject{
 		Key:          key,
-		URL:          p.generateObjectURL(key),
+		URL:          p.generateObjectURL(ctx, key),
 		Size:         aws.ToInt64(headOutput.ContentLength),
 		ContentType:  aws.ToString(headOutput.ContentType),
 		LastModified: aws.ToTime(headOutput.LastModified),
@@ -310,7 +311,7 @@ func (p *s3Provider) Download(ctx context.Context, key string) (io.ReadCloser, *
 
 	fileObject := &port.FileObject{
 		Key:          key,
-		URL:          p.generateObjectURL(key),
+		URL:          p.generateObjectURL(ctx, key),
 		Size:         aws.ToInt64(getObjectOutput.ContentLength),
 		ContentType:  aws.ToString(getObjectOutput.ContentType),
 		LastModified: aws.ToTime(getObjectOutput.LastModified),

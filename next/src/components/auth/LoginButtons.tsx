@@ -3,10 +3,10 @@
 import {useAuth} from '@/contexts/AuthContext'
 import {Button} from '@/components/ui/button'
 // Import icons from lucide-react
-import {Chrome, Facebook, Apple, Twitter} from 'lucide-react' // Added Twitter
+import {Chrome, Facebook, Apple} from 'lucide-react'
 
 export function LoginButtons() {
-	const {signInWithGoogle, signInWithFacebook, signInWithApple, signInWithTwitter, loading} = useAuth() // Added signInWithTwitter
+	const {signInWithGoogle, signInWithFacebook, signInWithApple, loading} = useAuth()
 
 	// TODO: Add error handling display (e.g., using sonner or similar)
 
@@ -23,10 +23,6 @@ export function LoginButtons() {
 			<Button onClick={signInWithApple} disabled={loading} variant='outline' className='w-full bg-black text-white hover:bg-gray-800'>
 				<Apple className='mr-2 h-4 w-4' /> {/* Apple Icon */}
 				{loading ? 'Signing in...' : 'Sign in with Apple'}
-			</Button>
-			<Button onClick={signInWithTwitter} disabled={loading} variant='outline' className='w-full bg-sky-500 text-white hover:bg-sky-600'>
-				<Twitter className='mr-2 h-4 w-4' /> {/* Twitter Icon */}
-				{loading ? 'Signing in...' : 'Sign in with Twitter'}
 			</Button>
 			{/* Add more providers as needed */}
 		</div>

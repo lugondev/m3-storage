@@ -39,12 +39,7 @@ func registerInfrastructureRoutes(app *fiber.App) {
 // registerMediaRoutes handles all media domain routes
 // This follows DDD by grouping routes by domain context
 func registerMediaRoutes(api fiber.Router, authMw *middleware.AuthMiddleware, handler *mediaHandler.MediaHandler) {
-	if handler == nil {
-		return // Gracefully handle missing handlers
-	}
-
 	mediaRoutes := api.Group("/media")
-
 	// Media upload operations - core domain functionality
 	mediaRoutes.Post("/upload", authMw.RequireAuth(), handler.UploadFile)
 
@@ -56,10 +51,6 @@ func registerMediaRoutes(api fiber.Router, authMw *middleware.AuthMiddleware, ha
 
 // registerStorageRoutes handles storage-related routes
 func registerStorageRoutes(api fiber.Router, handler *storageHandler.StorageHandler) {
-	if handler == nil {
-		return // Gracefully handle missing handlers
-	}
-
 	storageRoutes := api.Group("/storage")
 	storageRoutes.Get("/health", handler.CheckHealth)
 	storageRoutes.Get("/health/all", handler.CheckHealthAll)

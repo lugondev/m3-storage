@@ -7,10 +7,9 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 	logger "github.com/lugondev/go-log" // Import custom logger
-	"github.com/lugondev/m3-storage/internal/infra/jwt"
 	"github.com/lugondev/m3-storage/internal/modules/media/domain"
 	"github.com/lugondev/m3-storage/internal/modules/media/port"
-	"github.com/lugondev/m3-storage/internal/shared/constants"
+	"github.com/lugondev/m3-storage/internal/presentation/http/fiber/middleware"
 	"github.com/lugondev/m3-storage/internal/shared/utils"
 )
 
@@ -45,20 +44,10 @@ func NewMediaHandler(appLogger logger.Logger, mediaService port.MediaService) *M
 // @Failure 500 {object} map[string]string "Internal server error"
 // @Router /media/upload [post]
 func (h *MediaHandler) UploadFile(c *fiber.Ctx) error {
-	// 0. Extract UserID from JWT token
-	claims, ok := c.Locals(constants.UserClaimsKey).(*jwt.JWTClaims)
-	if !ok || claims == nil {
-		h.logger.Warn(c.Context(), "User claims not found in context or invalid type")
-		return c.Status(http.StatusUnauthorized).JSON(fiber.Map{
-			"error": "Unauthorized: user claims not found",
-		})
-	}
-	userID, err := uuid.Parse(claims.Subject)
+	userID, err := middleware.GetUserID(c)
 	if err != nil {
-		h.logger.Error(c.Context(), "Failed to parse userID from claims", map[string]any{"error": err, "claims.Subject": claims.Subject})
-		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Internal server error: could not parse user ID",
-		})
+		h.logger.Error(c.Context(), "Failed to get userID from claims", map[string]any{"error": err})
+		return err
 	}
 
 	h.logger.Info(c.Context(), "Handling file upload request", map[string]any{"userID": userID.String()})
@@ -113,25 +102,15 @@ func (h *MediaHandler) UploadFile(c *fiber.Ctx) error {
 // @Failure 500 {object} map[string]string "Internal server error"
 // @Router /media [get]
 func (h *MediaHandler) ListMedia(c *fiber.Ctx) error {
-	// Extract UserID from JWT token
-	claims, ok := c.Locals(constants.UserClaimsKey).(*jwt.JWTClaims)
-	if !ok || claims == nil {
-		h.logger.Warn(c.Context(), "User claims not found in context or invalid type")
-		return c.Status(http.StatusUnauthorized).JSON(fiber.Map{
-			"error": "Unauthorized: user claims not found",
-		})
-	}
-	userID, err := uuid.Parse(claims.Subject)
+	userID, err := middleware.GetUserID(c)
 	if err != nil {
-		h.logger.Error(c.Context(), "Failed to parse userID from claims", map[string]any{"error": err})
-		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Internal server error: could not parse user ID",
-		})
+		h.logger.Error(c.Context(), "Failed to get userID from claims", map[string]any{"error": err})
+		return err
 	}
 
 	// Parse pagination query
 	paginationQuery := &utils.PaginationQuery{}
-	if err := c.QueryParser(paginationQuery); err != nil {
+	if err = c.QueryParser(paginationQuery); err != nil {
 		h.logger.Warn(c.Context(), "Failed to parse pagination query", map[string]any{"error": err})
 		// Continue with default values
 	}
@@ -165,20 +144,10 @@ func (h *MediaHandler) ListMedia(c *fiber.Ctx) error {
 // @Failure 500 {object} map[string]string "Internal server error"
 // @Router /media/{id} [get]
 func (h *MediaHandler) GetMedia(c *fiber.Ctx) error {
-	// Extract UserID from JWT token
-	claims, ok := c.Locals(constants.UserClaimsKey).(*jwt.JWTClaims)
-	if !ok || claims == nil {
-		h.logger.Warn(c.Context(), "User claims not found in context or invalid type")
-		return c.Status(http.StatusUnauthorized).JSON(fiber.Map{
-			"error": "Unauthorized: user claims not found",
-		})
-	}
-	userID, err := uuid.Parse(claims.Subject)
+	userID, err := middleware.GetUserID(c)
 	if err != nil {
-		h.logger.Error(c.Context(), "Failed to parse userID from claims", map[string]any{"error": err})
-		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Internal server error: could not parse user ID",
-		})
+		h.logger.Error(c.Context(), "Failed to get userID from claims", map[string]any{"error": err})
+		return err
 	}
 
 	// Parse media ID from path parameter
@@ -220,20 +189,10 @@ func (h *MediaHandler) GetMedia(c *fiber.Ctx) error {
 // @Failure 500 {object} map[string]string "Internal server error"
 // @Router /media/{id} [delete]
 func (h *MediaHandler) DeleteMedia(c *fiber.Ctx) error {
-	// Extract UserID from JWT token
-	claims, ok := c.Locals(constants.UserClaimsKey).(*jwt.JWTClaims)
-	if !ok || claims == nil {
-		h.logger.Warn(c.Context(), "User claims not found in context or invalid type")
-		return c.Status(http.StatusUnauthorized).JSON(fiber.Map{
-			"error": "Unauthorized: user claims not found",
-		})
-	}
-	userID, err := uuid.Parse(claims.Subject)
+	userID, err := middleware.GetUserID(c)
 	if err != nil {
-		h.logger.Error(c.Context(), "Failed to parse userID from claims", map[string]any{"error": err})
-		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Internal server error: could not parse user ID",
-		})
+		h.logger.Error(c.Context(), "Failed to get userID from claims", map[string]any{"error": err})
+		return err
 	}
 
 	// Parse media ID from path parameter

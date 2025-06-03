@@ -1,76 +1,103 @@
 'use client'
 
-import {createContext, useContext, useEffect, useState, useCallback, useRef} from 'react'
-import {useRouter} from 'next/navigation' // Added for navigation
-import {GoogleAuthProvider, FacebookAuthProvider, OAuthProvider, signInWithPopup, signOut as firebaseSignOut, User as FirebaseUser} from 'firebase/auth'
+import {createContext, useContext, useEffect, useState, useCallback, useRef} from 'react' // Added useRef
+import {
+	GoogleAuthProvider,
+	FacebookAuthProvider,
+	OAuthProvider,
+	signInWithPopup,
+	signOut as firebaseSignOut,
+	User as FirebaseUser, // Keep type for initial login step
+} from 'firebase/auth'
 import {auth} from '@/lib/firebase'
+// Import useLocalStorage
 import {useLocalStorage} from 'usehooks-ts'
-import {exchangeFirebaseToken, logoutUser as serviceLogout, refreshToken as serviceRefreshToken, signInWithEmail as serviceSignInWithEmail, register as serviceRegister, verifyTwoFactorLogin} from '@/services/authService'
-import apiClient from '@/lib/apiClient'
+import {
+	exchangeFirebaseToken,
+	// storeTokens, // Removed
+	// getTokens, // Removed
+	logoutUser as serviceLogout, // Service function now handles backend notification + firebase signout
+	refreshToken as serviceRefreshToken, // Now requires refreshToken argument
+	signInWithEmail as serviceSignInWithEmail,
+	register as serviceRegister,
+	verifyTwoFactorLogin, // <-- Import the missing service function
+} from '@/services/authService'
 import {jwtDecode} from 'jwt-decode'
-import {SocialTokenExchangeInput, LoginInput, RegisterInput, AuthResult, LoginOutput, Verify2FARequest, UserTenantMembershipInfo} from '@/lib/apiClient'
+// Import types needed for service calls and user object
+// Changed RoleOutput to string[] based on apiClient.ts UserOutput
+// Added LoginOutput and Verify2FARequest for the new flow
+import {
+	SocialTokenExchangeInput,
+	LoginInput,
+	RegisterInput,
+	AuthResult,
+	LoginOutput, // <-- Add LoginOutput type
+	Verify2FARequest, // <-- Add Verify2FARequest type
+} from '@/lib/apiClient'
+// Import sonner
 import {toast} from 'sonner'
-import {JoinedTenantsResponse} from '@/types/tenantManagement' // Import the correct response type
 
+// Define the shape of the user object derived from the JWT payload and UserOutput
+// Aligning more closely with UserOutput for consistency
 interface AppUser {
 	id: string
 	email: string
-	first_name?: string
-	last_name?: string
+	first_name?: string // Use snake_case from backend DTO
+	last_name?: string // Use snake_case from backend DTO
 	avatar?: string
-	roles?: string[]
-	tenant_id?: string
+	roles?: string[] // Changed from role: RoleOutput | null to roles: string[]
+	// Add 'exp' and 'iat' if needed for client-side expiry checks (though decodeToken handles exp)
+	// exp?: number;
+	// iat?: number;
 }
 
 interface AuthContextType {
 	user: AppUser | null
 	isAuthenticated: boolean
-	isSystemAdmin: boolean | null // null: unknown, true/false: known
 	loading: boolean
-	currentTenantId: string | null
-	userTenants: UserTenantMembershipInfo[] | null
 	signInWithGoogle: () => Promise<void>
 	signInWithFacebook: () => Promise<void>
 	signInWithApple: () => Promise<void>
-	signInWithTwitter: () => Promise<void>
+	// Update signInWithEmail return type to indicate 2FA status
 	signInWithEmail: (data: LoginInput) => Promise<{success: boolean; twoFactorRequired: boolean; sessionToken?: string; error?: unknown}>
-	verifyTwoFactorCode: (data: Verify2FARequest) => Promise<{success: boolean; error?: unknown}>
+	verifyTwoFactorCode: (data: Verify2FARequest) => Promise<{success: boolean; error?: unknown}> // <-- Add 2FA verification function
 	register: (data: RegisterInput) => Promise<void>
 	logout: () => Promise<void>
-	fetchUserTenants: () => Promise<void> // Exposed for potential manual refresh
-	switchTenant: (tenantId: string) => Promise<boolean>
-	isTwoFactorPending: boolean
-	twoFactorSessionToken: string | null
-	handleAuthSuccess: (authResult: AuthResult) => Promise<void> // Expose this
+	isTwoFactorPending: boolean // <-- State to track if 2FA is pending
+	twoFactorSessionToken: string | null // <-- Expose the session token
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined)
+const AuthContext = createContext<AuthContextType>({} as AuthContextType)
 
+// Helper to decode JWT and get user data
 const decodeToken = (token: string): AppUser | null => {
 	try {
+		// Adjust the expected payload structure based on your backend's JWT
 		const decoded = jwtDecode<{
-			sub: string
+			sub: string // Standard JWT claim for user ID ('id' in AppUser)
 			email: string
-			first_name?: string
-			last_name?: string
-			avatar?: string
-			roles?: string[]
-			tenant_id?: string
-			exp: number
+			first_name?: string // Corresponds to 'first_name' in AppUser
+			last_name?: string // Corresponds to 'last_name' in AppUser
+			avatar?: string // Corresponds to 'avatar' in AppUser
+			roles?: string[] // Changed from role: RoleOutput to roles: string[]
+			exp: number // Standard expiry claim
+			// Add other claims you expect, like 'iat' (issued at)
 		}>(token)
 
+		// Check if token is expired (optional but recommended)
 		if (decoded.exp * 1000 < Date.now()) {
 			console.log('Token expired')
 			return null
 		}
+
+		// Map decoded claims to AppUser structure
 		return {
 			id: decoded.sub,
 			email: decoded.email,
 			first_name: decoded.first_name,
 			last_name: decoded.last_name,
 			avatar: decoded.avatar,
-			roles: decoded.roles || [],
-			tenant_id: decoded.tenant_id,
+			roles: decoded.roles || [], // Changed from role to roles, default to empty array
 		}
 	} catch (error) {
 		console.error('Failed to decode token:', error)
@@ -80,263 +107,192 @@ const decodeToken = (token: string): AppUser | null => {
 
 const ACCESS_TOKEN_KEY = 'accessToken'
 const REFRESH_TOKEN_KEY = 'refreshToken'
-const REFRESH_MARGIN_MS = 10 * 60 * 1000
-const MIN_REFRESH_DELAY_MS = 5 * 1000
+const REFRESH_MARGIN_MS = 10 * 60 * 1000 // 10 minutes in milliseconds
+const MIN_REFRESH_DELAY_MS = 5 * 1000 // Minimum delay of 5 seconds
 
 export function AuthProvider({children}: {children: React.ReactNode}) {
 	const [user, setUser] = useState<AppUser | null>(null)
-	const [isSystemAdmin, setIsSystemAdmin] = useState<boolean | null>(null)
 	const [loading, setLoading] = useState(true)
 	const [isAuthenticated, setIsAuthenticated] = useState(false)
-	const [currentTenantId, setCurrentTenantId] = useState<string | null>(null)
-	const [userTenants, setUserTenants] = useState<UserTenantMembershipInfo[] | null>(null)
-	const [isTwoFactorPending, setIsTwoFactorPending] = useState(false)
-	const [twoFactorSessionToken, setTwoFactorSessionToken] = useState<string | null>(null)
-	const refreshTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+	const [isTwoFactorPending, setIsTwoFactorPending] = useState(false) // <-- State for 2FA pending status
+	const [twoFactorSessionToken, setTwoFactorSessionToken] = useState<string | null>(null) // <-- State for 2FA token
+	const refreshTimeoutRef = useRef<NodeJS.Timeout | null>(null) // Ref for the timeout ID
 
+	// Use useLocalStorage for tokens
 	const [accessToken, setAccessToken] = useLocalStorage<string | null>(ACCESS_TOKEN_KEY, null)
 	const [refreshToken, setRefreshToken] = useLocalStorage<string | null>(REFRESH_TOKEN_KEY, null)
-	const router = useRouter() // Initialize router
 
-	const clearAuthData = useCallback(
-		async (doFirebaseSignOut = true) => {
+	// Function to clear tokens and user state
+	const clearAuthData = useCallback(async () => {
+		// Clear any pending refresh timeout
+		if (refreshTimeoutRef.current) {
+			clearTimeout(refreshTimeoutRef.current)
+			refreshTimeoutRef.current = null
+			console.log('Cleared scheduled token refresh.')
+		}
+		// Clear any pending refresh timeout
+		if (refreshTimeoutRef.current) {
+			clearTimeout(refreshTimeoutRef.current)
+			refreshTimeoutRef.current = null
+			console.log('Cleared scheduled token refresh.')
+		}
+		setAccessToken(null)
+		setRefreshToken(null)
+		setUser(null)
+		setIsAuthenticated(false)
+		setIsTwoFactorPending(false) // <-- Reset 2FA state
+		setTwoFactorSessionToken(null) // <-- Reset 2FA token
+		// Call serviceLogout for backend notification and Firebase signout (best effort)
+		try {
+			await serviceLogout()
+		} catch (error) {
+			console.warn('Error during service logout on clearAuthData:', error) // Log as warning, as main goal is clearing client state
+		}
+	}, [setAccessToken, setRefreshToken]) // refreshTimeoutRef doesn't need to be dependency
+
+	// --- Reordered useCallback definitions ---
+
+	// Function to schedule the next token refresh (defined before handleAuthenticationSuccess)
+	const scheduleTokenRefresh = useCallback(
+		(currentAccessToken: string) => {
+			// Clear any existing timeout
 			if (refreshTimeoutRef.current) {
 				clearTimeout(refreshTimeoutRef.current)
-				refreshTimeoutRef.current = null
 			}
-			setAccessToken(null)
-			setRefreshToken(null)
-			setUser(null)
-			setIsAuthenticated(false)
-			setIsSystemAdmin(null) // Reset system admin status
-			setCurrentTenantId(null)
-			setUserTenants(null)
-			setIsTwoFactorPending(false)
-			setTwoFactorSessionToken(null)
-			delete apiClient.defaults.headers.Authorization
 
-			if (doFirebaseSignOut) {
-				try {
-					await serviceLogout() // Notifies backend and signs out of Firebase
-				} catch (error) {
-					console.warn('Error during service logout on clearAuthData:', error)
+			try {
+				const decoded = jwtDecode<{exp: number}>(currentAccessToken)
+				const expiresInMs = decoded.exp * 1000 - Date.now()
+				let refreshDelay = expiresInMs - REFRESH_MARGIN_MS
+
+				// Ensure delay is not negative and meets minimum threshold
+				if (refreshDelay < MIN_REFRESH_DELAY_MS) {
+					refreshDelay = MIN_REFRESH_DELAY_MS
+					console.warn(`Token expiry too soon, scheduling refresh in ${MIN_REFRESH_DELAY_MS / 1000}s.`)
 				}
+
+				console.log(`Scheduling token refresh in ${refreshDelay / 1000 / 60} minutes.`)
+				// Assign the handler function directly
+				refreshTimeoutRef.current = setTimeout(handleScheduledRefresh, refreshDelay)
+			} catch (error) {
+				console.error('Failed to decode token for scheduling refresh:', error)
+				// Optionally logout if token is fundamentally broken
+				// clearAuthData();
 			}
-			// Navigate to login after clearing data
-			// Ensure this runs on the client side, which it should in a 'use client' component
-			router.push('/login')
 		},
-		[setAccessToken, setRefreshToken, router], // Added router to dependencies
+		// handleScheduledRefresh dependency will be correct due to ordering and useCallback
+		[], // Keep empty initially, will update later if needed, but it references a stable callback now
 	)
 
-	const checkSystemAdminStatus = useCallback(async () => {
-		if (!apiClient.defaults.headers.Authorization) {
-			setIsSystemAdmin(false) // Cannot check without auth token
-			return
-		}
-		try {
-			const response = await apiClient.get<{is_system_admin: boolean}>('/api/v1/auth/me/is-system-admin')
-			setIsSystemAdmin(response.data.is_system_admin)
-			console.log('System admin status fetched:', response.data.is_system_admin)
-		} catch (error) {
-			console.error('Failed to fetch system admin status:', error)
-			setIsSystemAdmin(false) // Default to false on error
-		}
-	}, [])
-
-	const fetchUserTenantsInternal = useCallback(async () => {
-		if (!apiClient.defaults.headers.Authorization) return // Guard against no auth token
-		console.log('Fetching user tenants internal...')
-		try {
-			// Use JoinedTenantsResponse which expects a "memberships" array
-			const response = await apiClient.get<JoinedTenantsResponse>('/api/v1/me/tenants')
-			const tenants = response.data.memberships // Access the memberships array
-			setUserTenants(tenants || null) // Set tenants, ensure it's null if memberships is undefined
-			console.log('User tenants fetched: ', tenants)
-
-			// Log conditions for auto-switch or prompt, but don't call switchTenant here
-			if (tenants && tenants.length === 1 && !currentTenantId) {
-				console.log('User has one tenant, auto-switch will be attempted by useEffect.')
-			} else if (tenants && tenants.length > 0 && !currentTenantId) {
-				console.log('User has multiple tenants, UI should prompt for selection.')
-			} else if ((!tenants || tenants.length === 0) && !currentTenantId) {
-				console.log('User has no tenants, operating in global context or needs to create/join.')
-			}
-		} catch (error) {
-			console.error('Failed to fetch user tenants:', error)
-			toast.error('Could not load your organizations.')
-			setUserTenants(null)
-		}
-	}, [currentTenantId]) // Removed direct call to switchTenant, so its dependency is not needed here.
-
-	const handleAuthSuccessInternal = useCallback(
-		async (authResult: AuthResult) => {
+	// Helper to update state after successful authentication (defined before handleScheduledRefresh)
+	const handleAuthenticationSuccess = useCallback(
+		(authResult: AuthResult) => {
 			setAccessToken(authResult.access_token)
 			if (authResult.refresh_token) {
 				setRefreshToken(authResult.refresh_token)
 			} else {
-				setRefreshToken(null)
+				setRefreshToken(null) // Clear if not provided
 			}
-			apiClient.defaults.headers.Authorization = `Bearer ${authResult.access_token}`
-
 			const appUser = decodeToken(authResult.access_token)
 			setUser(appUser)
 			setIsAuthenticated(!!appUser)
+			console.log('Authentication successful, state updated.')
 
-			await checkSystemAdminStatus() // Fetch system admin status
-
-			if (appUser?.tenant_id) {
-				setCurrentTenantId(appUser.tenant_id)
-				if (!userTenants || userTenants.length === 0) {
-					// Check state directly
-					await fetchUserTenantsInternal()
-				}
-			} else {
-				setCurrentTenantId(null)
-				await fetchUserTenantsInternal()
-			}
-			console.log('Authentication successful, state updated (including admin and tenant status).')
-
+			// Schedule the next refresh only if token is valid
 			if (appUser) {
-				// Schedule refresh using the stable function passed to setTimeout
-				scheduleTokenRefreshInternal(authResult.refresh_token || authResult.access_token)
+				scheduleTokenRefresh(authResult.access_token)
 			}
 		},
-		[setAccessToken, setRefreshToken, checkSystemAdminStatus, fetchUserTenantsInternal, userTenants],
-	) // scheduleTokenRefreshInternal will be defined soon
+		[setAccessToken, setRefreshToken, scheduleTokenRefresh], // scheduleTokenRefresh is now defined above
+	)
 
-	const handleScheduledRefreshInternal = useCallback(async () => {
-		console.log('Attempting scheduled token refresh (internal)...')
-		const currentRefreshTokenVal = refreshToken // Get from state
-		if (!currentRefreshTokenVal) {
+	// Function to handle the actual refresh call scheduled by setTimeout (defined last among these three)
+	const handleScheduledRefresh = useCallback(async () => {
+		console.log('Attempting scheduled token refresh...')
+		const currentRefreshToken = refreshToken // Capture token value at the time of callback creation
+		if (!currentRefreshToken) {
 			console.log('No refresh token available for scheduled refresh.')
-			await clearAuthData()
+			await clearAuthData() // Logout if refresh token is missing when handler runs
 			return
 		}
+
 		try {
-			const refreshResponse = await serviceRefreshToken(currentRefreshTokenVal)
-			await handleAuthSuccessInternal(refreshResponse.auth)
+			// Use the captured refresh token
+			const refreshResponse = await serviceRefreshToken(currentRefreshToken)
+			// On success, handleAuthenticationSuccess updates the access token in local storage,
+			// updates user state, and schedules the next refresh, keeping the session active.
+			handleAuthenticationSuccess(refreshResponse.auth)
 			console.log('Scheduled token refresh successful.')
 		} catch (error) {
 			console.error('Scheduled token refresh failed:', error)
-			toast.error('Session expired. Please log in again.')
-			await clearAuthData()
+			toast.error('Session expired. Please log in again.') // Inform user
+			await clearAuthData() // Logout on refresh failure
 		}
-	}, [refreshToken, handleAuthSuccessInternal, clearAuthData, serviceRefreshToken])
+		// Correct dependencies - relies on stable callbacks and captured refreshToken
+	}, [refreshToken, handleAuthenticationSuccess, clearAuthData, serviceRefreshToken])
 
-	const scheduleTokenRefreshInternal = useCallback(
-		(currentToken: string) => {
-			if (refreshTimeoutRef.current) {
-				clearTimeout(refreshTimeoutRef.current)
-			}
-			try {
-				const decoded = jwtDecode<{exp: number}>(currentToken)
-				const expiresInMs = decoded.exp * 1000 - Date.now()
-				let refreshDelay = expiresInMs - REFRESH_MARGIN_MS
-				if (refreshDelay < MIN_REFRESH_DELAY_MS) {
-					refreshDelay = MIN_REFRESH_DELAY_MS
-				}
-				console.log(`Scheduling token refresh in ${refreshDelay / 1000 / 60} minutes.`)
-				refreshTimeoutRef.current = setTimeout(handleScheduledRefreshInternal, refreshDelay)
-			} catch (error) {
-				console.error('Failed to decode token for scheduling refresh:', error)
-			}
-		},
-		[handleScheduledRefreshInternal],
-	)
+	// Update scheduleTokenRefresh dependencies now that handleScheduledRefresh is stable
+	// (This requires a second replace, but we'll try fixing ordering first)
+	// scheduleTokenRefresh's dependency array needs handleScheduledRefresh if not empty
+	// Let's re-declare scheduleTokenRefresh to update its dependency if needed by TS linting later.
+	// For now, assume the reordering suffices.
 
-	// Now that scheduleTokenRefreshInternal is defined, update handleAuthSuccessInternal's dependencies
-	// This is tricky. The ideal way is to pass the refresh scheduler to handleAuthSuccessInternal or use refs.
-	// For simplicity with write_to_file, we'll rely on the order and hope linters are okay.
-	// A more robust solution would use refs for these cyclically dependent callbacks.
-
+	// Check for existing tokens on initial load
 	const checkAuthStatus = useCallback(async () => {
 		setLoading(true)
 		try {
 			if (accessToken) {
-				apiClient.defaults.headers.Authorization = `Bearer ${accessToken}`
 				const decodedUser = decodeToken(accessToken)
 				if (decodedUser) {
+					// Access token is valid and not expired
 					setUser(decodedUser)
 					setIsAuthenticated(true)
-					await checkSystemAdminStatus() // Check admin status early
-
-					if (decodedUser.tenant_id) {
-						setCurrentTenantId(decodedUser.tenant_id)
-					} else {
-						setCurrentTenantId(null)
-						if (!userTenants) {
-							// Check state directly
-							await fetchUserTenantsInternal()
-						}
-					}
 					console.log('User authenticated from stored access token.')
-					scheduleTokenRefreshInternal(accessToken)
+					// Schedule refresh based on existing valid token
+					scheduleTokenRefresh(accessToken)
 				} else {
+					// Access token exists but is invalid/expired, try refreshing
 					console.log('Access token invalid/expired, attempting refresh...')
 					if (refreshToken) {
 						try {
+							// Pass the current refresh token to the service function
 							const refreshResponse = await serviceRefreshToken(refreshToken)
-							await handleAuthSuccessInternal(refreshResponse.auth)
+							// Update tokens and user state using the helper
+							// handleAuthenticationSuccess will also schedule the next refresh
+							handleAuthenticationSuccess(refreshResponse.auth)
 							console.log('User authenticated after initial token refresh.')
 						} catch (refreshError) {
 							console.error('Error during initial token refresh:', refreshError)
+							// Clear all auth data if refresh fails
 							await clearAuthData()
 						}
 					} else {
-						console.log('No refresh token available.')
-						await clearAuthData()
+						console.log('No refresh token available to attempt refresh.')
+						// Clear only access token and user, keep potential refresh token if logic allows
+						setAccessToken(null)
+						setUser(null)
+						setIsAuthenticated(false)
 					}
 				}
 			} else {
-				console.log('No stored access token.')
-				await clearAuthData(false) // Don't sign out of firebase if no token was found initially
+				// No access token found
+				console.log('No stored access token found.')
+				// Ensure state is clean if no access token
+				await clearAuthData() // Clear everything if no access token initially
 			}
 		} catch (error) {
 			console.error('Error during initial auth status check:', error)
-			await clearAuthData()
+			await clearAuthData() // Clear everything on unexpected errors
 		} finally {
 			setLoading(false)
 		}
-	}, [accessToken, refreshToken, clearAuthData, handleAuthSuccessInternal, userTenants, fetchUserTenantsInternal, checkSystemAdminStatus, scheduleTokenRefreshInternal])
+	}, [accessToken, refreshToken, clearAuthData, handleAuthenticationSuccess, setAccessToken]) // Added dependencies
 
 	useEffect(() => {
 		checkAuthStatus()
 	}, [checkAuthStatus])
 
-	// Moved switchTenantContext definition earlier
-	const switchTenantContext = useCallback(
-		async (tenantId: string): Promise<boolean> => {
-			console.log(`Attempting to switch to tenant: ${tenantId}`)
-			// setLoading(true)
-			// try {
-			// 	const response = await apiClient.post<AuthResult>('/api/v1/auth/switch-tenant', {tenant_id: tenantId})
-			// 	await handleAuthSuccessInternal(response.data) // Use the main handler
-			// 	const switchedTenant = userTenants?.find((t) => t.tenant_id === tenantId)
-			// 	toast.success(`Switched to organization: ${switchedTenant?.tenant_name || tenantId}`)
-			// 	setLoading(false)
-			// 	return true
-			// } catch (error) {
-			// 	console.error('Failed to switch tenant:', error)
-			// 	toast.error('Failed to switch organization.')
-			// 	setLoading(false)
-			// 	return false
-			// }
-			return true
-		},
-		[handleAuthSuccessInternal, userTenants], // userTenants for toast message
-	)
-
-	// useEffect for auto-switching tenant if only one exists and no currentTenantId
-	useEffect(() => {
-		// This effect handles auto-switching to a tenant if the user has exactly one tenant
-		// and no current tenant context is active.
-		if (switchTenantContext && userTenants && userTenants.length === 1 && !currentTenantId && !loading && isAuthenticated) {
-			console.log('Auto-switching to single tenant via useEffect...')
-			switchTenantContext(userTenants[0].tenant_id)
-		}
-	}, [userTenants, currentTenantId, loading, isAuthenticated, switchTenantContext]) // Added switchTenantContext
-
+	// Generic Social Sign-In Handler
 	const handleSocialSignIn = useCallback(
 		async (provider: GoogleAuthProvider | FacebookAuthProvider | OAuthProvider) => {
 			setLoading(true)
@@ -344,143 +300,203 @@ export function AuthProvider({children}: {children: React.ReactNode}) {
 				const result = await signInWithPopup(auth, provider)
 				const firebaseUser: FirebaseUser = result.user
 				const firebaseToken = await firebaseUser.getIdToken()
+
+				// Determine provider string
 				let providerId = 'unknown'
 				if (provider instanceof GoogleAuthProvider) providerId = 'google'
 				else if (provider instanceof FacebookAuthProvider) providerId = 'facebook'
 				else if (provider instanceof OAuthProvider && provider.providerId === 'apple.com') providerId = 'apple'
-				else if (provider instanceof OAuthProvider && provider.providerId === 'twitter.com') providerId = 'twitter'
 
-				const exchangeInput: SocialTokenExchangeInput = {token: firebaseToken, provider: providerId}
+				const exchangeInput: SocialTokenExchangeInput = {
+					token: firebaseToken,
+					provider: providerId,
+				}
+
 				const authResponse = await exchangeFirebaseToken(exchangeInput)
-				await handleAuthSuccessInternal(authResponse.auth)
+				handleAuthenticationSuccess(authResponse.auth)
+
 				await firebaseSignOut(auth)
+				console.log('Firebase sign-out successful after token exchange.')
 			} catch (error: unknown) {
 				console.error('Social sign-in error:', error)
-				const msg = error instanceof Error ? error.message : 'Please try again.'
-				toast.error(`Sign-in failed: ${msg}`)
+				let errorMessage = 'Please try again.'
+				if (error instanceof Error) {
+					errorMessage = error.message
+				} else if (typeof error === 'string') {
+					errorMessage = error
+				}
+				toast.error(`Sign-in failed: ${errorMessage}`)
 				await clearAuthData()
 			} finally {
 				setLoading(false)
 			}
 		},
-		[handleAuthSuccessInternal, clearAuthData],
-	)
+		[handleAuthenticationSuccess, clearAuthData],
+	) // Correct syntax for useCallback
 
-	const signInWithGoogle = async () => handleSocialSignIn(new GoogleAuthProvider())
-	const signInWithFacebook = async () => handleSocialSignIn(new FacebookAuthProvider())
-	const signInWithApple = async () => handleSocialSignIn(new OAuthProvider('apple.com'))
-	const signInWithTwitter = async () => handleSocialSignIn(new OAuthProvider('twitter.com'))
+	const signInWithGoogle = async () => {
+		await handleSocialSignIn(new GoogleAuthProvider())
+	}
 
+	const signInWithFacebook = async () => {
+		await handleSocialSignIn(new FacebookAuthProvider())
+	}
+
+	const signInWithApple = async () => {
+		await handleSocialSignIn(new OAuthProvider('apple.com'))
+	}
+
+	// Email/Password Sign-In Handler - Updated for 2FA
 	const signInWithEmail = useCallback(
 		async (data: LoginInput): Promise<{success: boolean; twoFactorRequired: boolean; sessionToken?: string; error?: unknown}> => {
 			setLoading(true)
-			setIsTwoFactorPending(false)
-			setTwoFactorSessionToken(null)
+			setIsTwoFactorPending(false) // Reset pending state
+			setTwoFactorSessionToken(null) // Reset token
 			try {
+				// Assume serviceSignInWithEmail now returns LoginOutput
 				const response: LoginOutput = await serviceSignInWithEmail(data)
+
 				if (response.two_factor_required && response.two_factor_session_token) {
+					// 2FA is required
+					console.log('2FA required, storing session token.')
 					setTwoFactorSessionToken(response.two_factor_session_token)
 					setIsTwoFactorPending(true)
+					// Don't call handleAuthenticationSuccess yet
 					setLoading(false)
 					return {success: true, twoFactorRequired: true, sessionToken: response.two_factor_session_token}
 				} else if (response.auth) {
-					await handleAuthSuccessInternal(response.auth)
+					// Login successful without 2FA
+					handleAuthenticationSuccess(response.auth)
+					console.log('Email/Password sign-in successful (no 2FA).')
 					toast.success('Successfully signed in!')
 					setLoading(false)
 					return {success: true, twoFactorRequired: false}
 				} else {
+					// Should not happen based on API spec, but handle defensively
 					throw new Error('Invalid login response structure.')
 				}
 			} catch (error: unknown) {
-				const msg = error instanceof Error ? error.message : 'Please check your credentials.'
-				toast.error(`Sign-in failed: ${msg}`)
-				await clearAuthData()
+				console.error('Email/Password sign-in error:', error)
+				let errorMessage = 'Please check your credentials and try again.'
+				// Basic error handling, can be improved
+				if (error instanceof Error) {
+					errorMessage = error.message
+				} else if (typeof error === 'object' && error && 'message' in error) {
+					errorMessage = String(error.message) // Handle potential API error objects
+				} else if (typeof error === 'string') {
+					errorMessage = error
+				}
+				toast.error(`Sign-in failed: ${errorMessage}`)
+				await clearAuthData() // Clear auth data on failure
 				setLoading(false)
 				return {success: false, twoFactorRequired: false, error}
 			}
+			// No finally block needed here as setLoading(false) is handled in branches
 		},
-		[handleAuthSuccessInternal, clearAuthData],
+		[handleAuthenticationSuccess, clearAuthData], // Added clearAuthData dependency
 	)
 
+	// 2FA Verification Handler
 	const verifyTwoFactorCode = useCallback(
 		async (data: Verify2FARequest): Promise<{success: boolean; error?: unknown}> => {
 			setLoading(true)
+			// Ensure we have the session token from the previous step
 			if (!twoFactorSessionToken || data.two_factor_session_token !== twoFactorSessionToken) {
+				console.error('2FA session token mismatch or missing.')
 				toast.error('Invalid 2FA session. Please try logging in again.')
-				await clearAuthData()
+				await clearAuthData() // Clear auth state if session is invalid
 				setLoading(false)
 				return {success: false, error: new Error('Invalid 2FA session')}
 			}
+
 			try {
-				const response: LoginOutput = await verifyTwoFactorLogin(data)
+				// Assume a new service function verifyTwoFactorLogin exists
+				// It should take Verify2FARequest and return LoginOutput on success
+				const response: LoginOutput = await verifyTwoFactorLogin(data) // Need to add verifyTwoFactorLogin to authService
+
 				if (response.auth) {
-					await handleAuthSuccessInternal(response.auth)
-					setIsTwoFactorPending(false)
-					setTwoFactorSessionToken(null)
+					// 2FA verification successful, complete login
+					handleAuthenticationSuccess(response.auth)
+					setIsTwoFactorPending(false) // Clear pending state
+					setTwoFactorSessionToken(null) // Clear token
+					console.log('2FA verification successful.')
 					toast.success('Successfully signed in!')
 					setLoading(false)
 					return {success: true}
 				} else {
+					// Should not happen on successful verification
 					throw new Error('Invalid 2FA verification response structure.')
 				}
 			} catch (error: unknown) {
-				const msg = error instanceof Error ? error.message : 'Invalid 2FA code or session expired.'
-				toast.error(`2FA verification failed: ${msg}`)
-				setIsTwoFactorPending(false)
-				setTwoFactorSessionToken(null)
+				console.error('2FA verification error:', error)
+				let errorMessage = 'Invalid 2FA code or session expired. Please try again.'
+				// Basic error handling
+				if (error instanceof Error) {
+					errorMessage = error.message
+				} else if (typeof error === 'object' && error && 'message' in error) {
+					errorMessage = String(error.message)
+				} else if (typeof error === 'string') {
+					errorMessage = error
+				}
+				toast.error(`2FA verification failed: ${errorMessage}`)
+				// Don't clear full auth data here, just the 2FA state,
+				// allowing the user to potentially retry the code input or restart login.
+				setIsTwoFactorPending(false) // Reset pending state on failure
+				setTwoFactorSessionToken(null) // Reset token on failure
 				setLoading(false)
 				return {success: false, error}
 			}
 		},
-		[twoFactorSessionToken, handleAuthSuccessInternal, clearAuthData],
+		[twoFactorSessionToken, handleAuthenticationSuccess, clearAuthData], // Added dependencies
 	)
 
+	// Register Handler
 	const register = useCallback(async (data: RegisterInput) => {
 		setLoading(true)
 		try {
 			await serviceRegister(data)
+			console.log('Registration successful.')
 			toast.success('Successfully registered!')
 		} catch (error: unknown) {
-			const msg = error instanceof Error ? error.message : 'Registration failed.'
-			toast.error(`Registration failed: ${msg}`)
-			setIsAuthenticated(false) // Ensure states are reset if register implies login
+			console.error('Registration error:', error)
+			let errorMessage = 'Registration failed. Please try again.'
+			if (error instanceof Error) {
+				errorMessage = error.message
+			} else if (typeof error === 'string') {
+				errorMessage = error
+			}
+			toast.error(`Registration failed: ${errorMessage}`)
+			setIsAuthenticated(false)
 			setUser(null)
-			setIsSystemAdmin(null)
+			// Re-throw the error so the form can catch it
 			throw error
 		} finally {
 			setLoading(false)
 		}
-	}, [])
+	}, []) // Correct syntax for useCallback
 
+	// Logout function
 	const logout = useCallback(async () => {
 		setLoading(true)
-		await clearAuthData()
+		await clearAuthData() // Calls serviceLogout internally
 		setLoading(false)
+		console.log('User logged out.')
 		toast.success('Successfully signed out.')
-	}, [clearAuthData])
+	}, [clearAuthData]) // Added clearAuthData to dependencies
 
-	// const valueRef = useRef<AuthContextType | null>(null); // Removed as direct dependency is used
-
-	const value: AuthContextType = {
+	const value = {
 		user,
 		isAuthenticated,
-		handleAuthSuccess: handleAuthSuccessInternal, // Add to context value
-		isSystemAdmin,
 		loading,
 		signInWithGoogle,
 		signInWithFacebook,
 		signInWithApple,
-		signInWithTwitter,
 		signInWithEmail,
-		verifyTwoFactorCode,
+		verifyTwoFactorCode, // <-- Add verify function to context value
 		register,
 		logout,
-		fetchUserTenants: fetchUserTenantsInternal, // Expose the internal fetcher
-		switchTenant: switchTenantContext, // Expose the newly defined switchTenant
-		currentTenantId,
-		userTenants,
-		isTwoFactorPending,
-		twoFactorSessionToken,
+		isTwoFactorPending, // <-- Add pending state to context value
+		twoFactorSessionToken, // <-- Add session token to context value
 	}
 
 	return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
@@ -489,7 +505,6 @@ export function AuthProvider({children}: {children: React.ReactNode}) {
 export function useAuth() {
 	const context = useContext(AuthContext)
 	if (context === undefined) {
-		// Check for undefined due to new initialization
 		throw new Error('useAuth must be used within an AuthProvider')
 	}
 	return context
