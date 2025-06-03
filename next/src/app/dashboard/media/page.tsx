@@ -26,7 +26,7 @@ const MediaManagementPage = () => {
 		try {
 			setLoading(true)
 			const response: MediaListResponse = await listMedia()
-			setMediaItems(response.media || [])
+			setMediaItems(response.data || [])
 		} catch (error) {
 			console.error('Failed to fetch media:', error)
 			toast.error('Failed to load media items')
@@ -113,7 +113,7 @@ const MediaManagementPage = () => {
 	}
 
 	// Filter media items
-	const filteredMedia = mediaItems.filter((item) => item.filename.toLowerCase().includes(searchTerm.toLowerCase()) || item.mime_type.toLowerCase().includes(searchTerm.toLowerCase()))
+	const filteredMedia = mediaItems.filter((item) => item.file_name.toLowerCase().includes(searchTerm.toLowerCase()) || item.media_type.toLowerCase().includes(searchTerm.toLowerCase()))
 
 	// Format file size
 	const formatFileSize = (bytes: number) => {
@@ -125,11 +125,11 @@ const MediaManagementPage = () => {
 	}
 
 	// Get file type badge color
-	const getFileTypeBadge = (mimeType: string) => {
-		if (mimeType.startsWith('image/')) return 'bg-green-100 text-green-800'
-		if (mimeType.startsWith('video/')) return 'bg-blue-100 text-blue-800'
-		if (mimeType.startsWith('audio/')) return 'bg-purple-100 text-purple-800'
-		if (mimeType.includes('pdf')) return 'bg-red-100 text-red-800'
+	const getFileTypeBadge = (mediaType: string) => {
+		if (mediaType?.startsWith('image/')) return 'bg-green-100 text-green-800'
+		if (mediaType?.startsWith('video/')) return 'bg-blue-100 text-blue-800'
+		if (mediaType?.startsWith('audio/')) return 'bg-purple-100 text-purple-800'
+		if (mediaType?.includes('pdf')) return 'bg-red-100 text-red-800'
 		return 'bg-gray-100 text-gray-800'
 	}
 
@@ -251,27 +251,27 @@ const MediaManagementPage = () => {
 								{filteredMedia.map((item) => (
 									<Card key={item.id} className='overflow-hidden'>
 										<div className='aspect-square bg-gray-100 flex items-center justify-center'>
-											{item.mime_type.startsWith('image/') ? (
-												<img src={item.url} alt={item.filename} className='w-full h-full object-cover' />
+											{item.media_type?.startsWith('image/') ? (
+												<img src={item.public_url} alt={item.file_name} className='w-full h-full object-cover' />
 											) : (
 												<div className='text-center'>
-													<div className='text-4xl mb-2'>{item.mime_type.startsWith('video/') ? '🎥' : item.mime_type.startsWith('audio/') ? '🎵' : item.mime_type.includes('pdf') ? '📄' : '📁'}</div>
-													<p className='text-xs text-gray-500'>{item.mime_type}</p>
+													<div className='text-4xl mb-2'>{item.media_type?.startsWith('video/') ? '🎥' : item.media_type?.startsWith('audio/') ? '🎵' : item.media_type?.includes('pdf') ? '📄' : '📁'}</div>
+													<p className='text-xs text-gray-500'>{item.media_type}</p>
 												</div>
 											)}
 										</div>
 										<CardContent className='p-3'>
 											<div className='space-y-2'>
-												<h4 className='font-medium text-sm truncate' title={item.filename}>
-													{item.filename}
+												<h4 className='font-medium text-sm truncate' title={item.file_name}>
+													{item.file_name}
 												</h4>
 												<div className='flex items-center justify-between'>
-													<Badge className={getFileTypeBadge(item.mime_type)}>{item.mime_type.split('/')[0]}</Badge>
-													<span className='text-xs text-gray-500'>{formatFileSize(item.size)}</span>
+													<Badge className={getFileTypeBadge(item.media_type)}>{item.media_type?.split('/')[0] || 'unknown'}</Badge>
+													<span className='text-xs text-gray-500'>{formatFileSize(item.file_size)}</span>
 												</div>
 												<p className='text-xs text-gray-400'>{new Date(item.created_at).toLocaleDateString()}</p>
 												<div className='flex gap-1'>
-													<Button variant='outline' size='sm' className='flex-1' onClick={() => window.open(item.url, '_blank')}>
+													<Button variant='outline' size='sm' className='flex-1' onClick={() => window.open(item.public_url, '_blank')}>
 														<Eye className='h-3 w-3 mr-1' />
 														View
 													</Button>
@@ -280,13 +280,13 @@ const MediaManagementPage = () => {
 														size='sm'
 														onClick={() => {
 															const link = document.createElement('a')
-															link.href = item.url
-															link.download = item.filename
+															link.href = item.public_url
+															link.download = item.file_name
 															link.click()
 														}}>
 														<Download className='h-3 w-3' />
 													</Button>
-													<Button variant='outline' size='sm' onClick={() => handleDelete(item.id, item.filename)} className='text-red-600 hover:text-red-700'>
+													<Button variant='outline' size='sm' onClick={() => handleDelete(item.id, item.file_name)} className='text-red-600 hover:text-red-700'>
 														<Trash2 className='h-3 w-3' />
 													</Button>
 												</div>

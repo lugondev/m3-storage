@@ -10,10 +10,14 @@ const REFRESH_TOKEN_KEY = 'refreshToken';
 // Media-related types based on actual backend routes
 export interface MediaItem {
 	id: string;
-	filename: string;
-	url: string;
-	size: number;
-	mime_type: string;
+	user_id: string;
+	file_name: string;
+	file_path: string;
+	file_size: number;
+	media_type: string;
+	provider: string;
+	public_url: string;
+	uploaded_at: string;
 	created_at: string;
 	updated_at: string;
 }

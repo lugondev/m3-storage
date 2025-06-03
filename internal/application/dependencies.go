@@ -24,8 +24,11 @@ import (
 	mediaHandler "github.com/lugondev/m3-storage/internal/modules/media/handler"
 	mediaPort "github.com/lugondev/m3-storage/internal/modules/media/port"
 	mediaService "github.com/lugondev/m3-storage/internal/modules/media/service"
+
+	// Storage Module - DDD compliant
 	storageFactory "github.com/lugondev/m3-storage/internal/modules/storage/factory"
 	storageHandler "github.com/lugondev/m3-storage/internal/modules/storage/handler"
+	storageService "github.com/lugondev/m3-storage/internal/modules/storage/service"
 )
 
 // Infrastructure holds the initialized infrastructure components.
@@ -40,7 +43,7 @@ type Infrastructure struct {
 type Application struct {
 	// Services
 	CacheSvc   appPort.CacheService
-	StorageSvc appPort.StorageService
+	StorageSvc storageService.StorageService // DDD-compliant storage service
 	JWTSvc     *infraJWT.JWTService
 	NotifySvc  sen.NotifyService
 	MediaSvc   mediaPort.MediaService
@@ -98,23 +101,22 @@ func BuildDependencies(infra *Infrastructure) (*Application, error) {
 	app.AuthMiddleware = middleware.NewAuthMiddleware(app.JWTSvc)
 	log.Info(ctx, "Custom middleware initialized")
 
-	// Initialize Media Module
-	// Assuming StorageFactory is available or initialized elsewhere (e.g., in Infrastructure or passed to BuildDependencies)
-	// For now, let's assume a storageFactoryInstance is available.
-	// If it's part of `infra`, it should be `infra.StorageFactory`.
-	// This needs to be resolved based on where StorageFactory is actually initialized.
-	// Let's assume it's created here for now or passed in.
-	// If StorageFactory is part of `infra`, then `infra.StorageFactory` should be used.
-	// We need a concrete instance of StorageFactory.
-	// For the purpose of this example, let's assume NewStorageFactory() can be called.
-	// Initialize Storage Factory with config and logger
+	// --- Initialize Storage Module (DDD-compliant) ---
+	// Initialize Storage Factory
 	sFactory := storageFactory.NewStorageFactory(infra.Config, log)
 
-	app.MediaSvc = mediaService.NewMediaService(infra.DB, log, sFactory) // Pass infra.DB
+	// Initialize Storage Service (Application Layer)
+	app.StorageSvc = storageService.NewStorageService(sFactory, log)
+	log.Info(ctx, "Storage service initialized")
+
+	// Initialize Storage Handler (Presentation Layer)
+	app.StorageHandler = storageHandler.NewStorageHandler(app.StorageSvc, log)
+	log.Info(ctx, "Storage handler initialized")
+
+	// --- Initialize Media Module ---
+	app.MediaSvc = mediaService.NewMediaService(infra.DB, log, sFactory)
 	app.MediaHandler = mediaHandler.NewMediaHandler(log, app.MediaSvc)
 	log.Info(ctx, "Media module initialized")
-
-	app.StorageHandler = storageHandler.NewStorageHandler(sFactory, log)
 
 	log.Info(ctx, "Handlers initialized")
 
