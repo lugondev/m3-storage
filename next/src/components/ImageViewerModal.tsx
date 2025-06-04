@@ -3,7 +3,7 @@
 import {useState, useEffect} from 'react'
 import {Dialog, DialogContent, DialogHeader, DialogTitle} from '@/components/ui/dialog'
 import {Button} from '@/components/ui/button'
-import {Download, X, ZoomIn, ZoomOut, RotateCw} from 'lucide-react'
+import {Download, ZoomIn, ZoomOut, RotateCw} from 'lucide-react'
 import {type MediaItem} from '@/lib/apiClient'
 
 interface ImageViewerModalProps {
