@@ -81,12 +81,12 @@ info:
     email: support@swagger.io
     name: API Support
     url: http://www.swagger.io/support
-  description: This is the core API for AuthSys platform
+  description: This is the core API for M3 Storage platform
   license:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
   termsOfService: http://swagger.io/terms/
-  title: AuthSys API
+  title: M3 Storage API
   version: "1.0"
 paths:
   /media:

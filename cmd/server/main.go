@@ -29,9 +29,9 @@ import (
 	_ "github.com/lugondev/m3-storage/docs"
 )
 
-// @title AuthSys API
+// @title M3 Storage API
 // @version 1.0
-// @description This is the core API for AuthSys platform
+// @description This is the core API for M3 Storage platform
 // @termsOfService http://swagger.io/terms/
 
 // @contact.name API Support
