@@ -8,6 +8,7 @@ import (
 	"github.com/lugondev/m3-storage/internal/adapters/discord"
 	"github.com/lugondev/m3-storage/internal/adapters/firebase"
 	"github.com/lugondev/m3-storage/internal/adapters/local"
+	"github.com/lugondev/m3-storage/internal/adapters/minio"
 	"github.com/lugondev/m3-storage/internal/adapters/s3"
 	"github.com/lugondev/m3-storage/internal/infra/config"
 	"github.com/lugondev/m3-storage/internal/modules/storage/port"
@@ -46,6 +47,8 @@ func (f *storageFactory) CreateProvider(providerType port.StorageProviderType) (
 		return s3.NewS3Provider(f.config.Scaleway.ToS3Config(), f.logger)
 	case port.ProviderBackBlaze:
 		return s3.NewS3Provider(f.config.BackBlaze.ToS3Config(), f.logger)
+	case port.ProviderMinIO:
+		return minio.NewMinIOProvider(f.config.MinIO, f.logger)
 	default:
 		return nil, errors.New("unsupported storage provider type for default config: " + string(providerType))
 	}

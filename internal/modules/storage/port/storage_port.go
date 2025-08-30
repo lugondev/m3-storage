@@ -18,6 +18,7 @@ const (
 	ProviderDiscord      StorageProviderType = "discord"   // Discord channel storage
 	ProviderScaleway     StorageProviderType = "scaleway"  // Scaleway Object Storage (S3-compatible)
 	ProviderBackBlaze    StorageProviderType = "backblaze" // Backblaze B2 Cloud Storage
+	ProviderMinIO        StorageProviderType = "minio"     // MinIO Object Storage (S3-compatible)
 )
 
 // FileObject represents a file stored in the adapters.

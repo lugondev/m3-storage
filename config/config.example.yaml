@@ -1,3 +1,21 @@
+# M3 Storage Configuration Example
+# 
+# This file contains configuration examples for all supported storage providers.
+# For detailed setup instructions for each provider, see the documentation in docs/:
+# - docs/storage-providers.md (overview of all providers)
+# - docs/local-storage-provider.md
+# - docs/s3-provider.md  
+# - docs/azure-provider.md
+# - docs/firebase-provider.md
+# - docs/cloudflare-r2-provider.md
+# - docs/scaleway-provider.md
+# - docs/backblaze-b2-provider.md
+# - docs/minio-provider.md
+# - docs/discord-provider.md
+#
+# Environment variables take precedence over configuration file values.
+# Use environment variables for sensitive information like API keys and passwords.
+
 # Application Configuration
 app:
     env: 'development' # Environment (development, staging, production)
@@ -56,59 +74,71 @@ rateLimiter:
 
 # Azure Blob Storage Configuration
 azure:
-    accountName: '' # Azure Storage account name. Set AZURE_ACCOUNT_NAME env var if preferred.
-    accountKey: '' # Azure Storage account key. Set AZURE_ACCOUNT_KEY env var if preferred.
-    containerName: '' # Azure Blob Storage container name. Set AZURE_CONTAINER_NAME env var if preferred.
-    serviceUrl: '' # Optional: Custom service URL (e.g., for Azurite emulator). Set AZURE_SERVICE_URL env var if preferred.
+    accountName: '' # Azure Storage account name (e.g., 'mystorageaccount'). Set AZURE_ACCOUNT_NAME env var if preferred.
+    accountKey: '' # Azure Storage account key (primary or secondary). Set AZURE_ACCOUNT_KEY env var if preferred.
+    containerName: '' # Azure Blob Storage container name (e.g., 'media-container'). Set AZURE_CONTAINER_NAME env var if preferred.
+    serviceUrl: '' # Optional: Custom service URL (e.g., 'http://127.0.0.1:10000/devstoreaccount1' for Azurite emulator). Set AZURE_SERVICE_URL env var if preferred.
 
-# FireStore Configuration
+# FireStore Configuration (Firebase Storage)
 firestore:
-    projectID: 'your-project-id' # Google Cloud Project ID
+    projectID: 'your-project-id' # Google Cloud Project ID (e.g., 'myapp-12345')
     credentialsFile: 'path/to/your/serviceAccountKey.json' # Path to Firebase Admin SDK service account key JSON file
     bucketName: 'your-project-id.appspot.com' # Firebase Storage bucket name (usually projectID.appspot.com)
 
-# S3 Configuration
+# S3 Configuration (Amazon S3 and S3-compatible services)
 s3:
     accessKeyID: '' # AWS Access Key ID. Set S3_ACCESS_KEY_ID env var if preferred.
     secretAccessKey: '' # AWS Secret Access Key. Set S3_SECRET_ACCESS_KEY env var if preferred.
-    region: 'us-east-1' # AWS Region. Set S3_REGION env var if preferred.
+    region: 'us-east-1' # AWS Region (e.g., 'us-east-1', 'eu-west-1'). Set S3_REGION env var if preferred.
     bucketName: 'your-s3-bucket-name' # S3 Bucket Name. Set S3_BUCKET_NAME env var if preferred.
-    endpoint: '' # Optional: Custom S3-compatible endpoint (e.g., for MinIO). Set S3_ENDPOINT env var if preferred.
-    disableSSL: false # Optional: Set to true to disable SSL (e.g., for local MinIO). Set S3_DISABLE_SSL env var if preferred.
-    forcePathStyle: false # Optional: Set to true to force path-style addressing (e.g., for MinIO). Set S3_FORCE_PATH_STYLE env var if preferred.
+    endpoint: '' # Optional: Custom S3-compatible endpoint (leave empty for AWS S3). Set S3_ENDPOINT env var if preferred.
+    disableSSL: false # Optional: Set to true to disable SSL (not recommended for production). Set S3_DISABLE_SSL env var if preferred.
+    forcePathStyle: false # Optional: Set to true to force path-style addressing (required for some S3-compatible services). Set S3_FORCE_PATH_STYLE env var if preferred.
 
-# Cloudflare R2 Configuration
+# Cloudflare R2 Configuration (S3-compatible with zero egress fees)
 cloudflare:
-    accountID: '' # Cloudflare Account ID. Set CLOUDFLARE_ACCOUNT_ID env var if preferred.
-    accessKeyID: '' # R2 Access Key ID. Set CLOUDFLARE_ACCESS_KEY_ID env var if preferred.
-    secretAccessKey: '' # R2 Secret Access Key. Set CLOUDFLARE_SECRET_ACCESS_KEY env var if preferred.
+    accountID: '' # Cloudflare Account ID (found in Cloudflare Dashboard). Set CLOUDFLARE_ACCOUNT_ID env var if preferred.
+    accessKeyID: '' # R2 API Token Access Key ID. Set CLOUDFLARE_ACCESS_KEY_ID env var if preferred.
+    secretAccessKey: '' # R2 API Token Secret Access Key. Set CLOUDFLARE_SECRET_ACCESS_KEY env var if preferred.
     bucketName: 'your-r2-bucket-name' # R2 Bucket Name. Set CLOUDFLARE_BUCKET_NAME env var if preferred.
     publicDomain: '' # Optional: Custom public domain for accessing files (e.g., "files.example.com"). Set CLOUDFLARE_PUBLIC_DOMAIN env var if preferred.
 
-# Discord Configuration (Notifications & File Storage)
+# Discord Configuration (Experimental - for educational/testing use only)
+# ⚠️  WARNING: Not recommended for production use. May violate Discord's ToS.
 discord:
-    botToken: '' # Discord Bot Token. Set DISCORD_BOT_TOKEN env var if preferred.
-    channelID: '' # Discord Channel ID for file adapters/notifications. Set DISCORD_CHANNEL_ID env var if preferred.
+    botToken: '' # Discord Bot Token (from Discord Developer Portal). Set DISCORD_BOT_TOKEN env var if preferred.
+    channelID: '' # Discord Channel ID for file storage/notifications (enable Developer Mode to copy ID). Set DISCORD_CHANNEL_ID env var if preferred.
     webhookURL: '' # Optional: Discord Webhook URL for notifications (alternative to bot). Set DISCORD_WEBHOOK_URL env var if preferred.
 
 # Local Storage Configuration
 localStorage:
     path: './uploads' # Path to the local directory for storing files. Set LOCAL_STORAGE_PATH env var if preferred.
     baseURL: '/files' # Base URL for accessing files publicly (e.g., http://localhost:8080/files). Set LOCAL_STORAGE_BASE_URL env var if preferred.
+    signedUrlExpiry: '24h' # Signed URL expiration time (e.g., '1h', '24h', '7d'). Set LOCAL_STORAGE_SIGNED_URL_EXPIRY env var if preferred.
+    signedUrlSecret: 'your-secret-key' # Secret key for signing URLs. Set LOCAL_STORAGE_SIGNED_URL_SECRET env var if preferred.
 
-# Scaleway Object Storage Configuration
+# Scaleway Object Storage Configuration (European S3-compatible with GDPR compliance)
 scaleway:
-    accessKeyID: '' # Scaleway Access Key ID. Set SCALEWAY_ACCESS_KEY_ID env var if preferred.
+    accessKeyID: '' # Scaleway Access Key ID (from Scaleway Console). Set SCALEWAY_ACCESS_KEY_ID env var if preferred.
     secretAccessKey: '' # Scaleway Secret Access Key. Set SCALEWAY_SECRET_ACCESS_KEY env var if preferred.
-    region: 'fr-par' # Scaleway Region (e.g., fr-par, nl-ams). Set SCALEWAY_REGION env var if preferred.
+    region: 'fr-par' # Scaleway Region ('fr-par', 'nl-ams', 'pl-waw'). Set SCALEWAY_REGION env var if preferred.
     bucketName: 'your-scaleway-bucket' # Scaleway Bucket Name. Set SCALEWAY_BUCKET_NAME env var if preferred.
-    endpoint: '' # Optional: Custom endpoint URL. Set SCALEWAY_ENDPOINT env var if preferred.
+    endpoint: '' # Optional: Custom endpoint URL (auto-generated if empty). Set SCALEWAY_ENDPOINT env var if preferred.
 
-# Backblaze B2 Configuration
+# Backblaze B2 Configuration (Cost-effective S3-compatible storage)
 backblaze:
-    keyID: '' # Backblaze Application Key ID. Set BACKBLAZE_KEY_ID env var if preferred.
+    keyID: '' # Backblaze Application Key ID (from B2 Console). Set BACKBLAZE_KEY_ID env var if preferred.
     applicationKey: '' # Backblaze Application Key. Set BACKBLAZE_APPLICATION_KEY env var if preferred.
-    bucketID: '' # Backblaze Bucket ID. Set BACKBLAZE_BUCKET_ID env var if preferred.
+    bucketID: '' # Backblaze Bucket ID (found in B2 Console). Set BACKBLAZE_BUCKET_ID env var if preferred.
     bucketName: '' # Backblaze Bucket Name. Set BACKBLAZE_BUCKET_NAME env var if preferred.
-    region: 'us-west-002' # Optional: Region (defaults to us-west-002). Set BACKBLAZE_REGION env var if preferred.
-    endpoint: '' # Optional: Custom endpoint URL. Set BACKBLAZE_ENDPOINT env var if preferred.
+    region: 'us-west-002' # Optional: Region ('us-west-002', 'us-east-005', 'eu-central-003'). Set BACKBLAZE_REGION env var if preferred.
+    endpoint: '' # Optional: Custom endpoint URL (auto-generated based on region if empty). Set BACKBLAZE_ENDPOINT env var if preferred.
+
+# MinIO Configuration (Self-hosted S3-compatible object storage)
+minio:
+    accessKeyID: 'minioadmin' # MinIO Access Key ID (default: 'minioadmin' for local). Set MINIO_ACCESS_KEY_ID env var if preferred.
+    secretAccessKey: 'minioadmin' # MinIO Secret Access Key (default: 'minioadmin' for local). Set MINIO_SECRET_ACCESS_KEY env var if preferred.
+    bucketName: 'm3-storage' # MinIO Bucket Name. Set MINIO_BUCKET_NAME env var if preferred.
+    endpoint: 'http://localhost:9000' # MinIO endpoint URL (e.g., 'https://minio.yourdomain.com'). Set MINIO_ENDPOINT env var if preferred.
+    region: 'us-east-1' # Optional: MinIO region (default: 'us-east-1'). Set MINIO_REGION env var if preferred.
+    useSSL: false # Whether to use SSL/TLS (true for https endpoints). Set MINIO_USE_SSL env var if preferred.

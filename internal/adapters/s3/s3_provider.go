@@ -355,5 +355,7 @@ func (p *s3Provider) ProviderType() port.StorageProviderType {
 	if strings.Contains(p.endpointURL, "scw.cloud") || strings.Contains(p.endpointURL, "scaleway.com") {
 		return port.ProviderScaleway
 	}
+	// Note: MinIO detection removed because MinIO has its own dedicated provider
+	// MinIO instances should use the dedicated MinIO provider instead of S3 provider
 	return port.ProviderS3
 }

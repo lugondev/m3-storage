@@ -18,6 +18,7 @@ const (
 	ProviderDiscord      StorageProviderType = "discord"
 	ProviderScaleway     StorageProviderType = "scaleway"
 	ProviderBackBlaze    StorageProviderType = "backblaze"
+	ProviderMinIO        StorageProviderType = "minio"
 )
 
 // FileObject represents a file stored in the storage system

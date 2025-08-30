@@ -128,6 +128,16 @@ type BackBlazeConfig struct {
 	Endpoint       string `mapstructure:"endpoint"`       // Optional: Custom endpoint URL
 }
 
+// MinIOConfig holds MinIO specific configuration
+type MinIOConfig struct {
+	AccessKeyID     string `mapstructure:"accessKeyID"`     // MinIO Access Key ID
+	SecretAccessKey string `mapstructure:"secretAccessKey"` // MinIO Secret Access Key
+	BucketName      string `mapstructure:"bucketName"`      // MinIO Bucket Name
+	Endpoint        string `mapstructure:"endpoint"`        // MinIO Server Endpoint URL
+	Region          string `mapstructure:"region"`          // Optional: MinIO Region
+	UseSSL          bool   `mapstructure:"useSSL"`          // Whether to use SSL/TLS
+}
+
 // ToS3Config converts BackBlazeConfig to S3Config for use with S3-compatible API
 func (c BackBlazeConfig) ToS3Config() S3Config {
 	endpoint := c.Endpoint
@@ -161,6 +171,25 @@ func (c ScalewayConfig) ToS3Config() S3Config {
 	}
 }
 
+// ToS3Config converts MinIOConfig to S3Config for use with S3-compatible API
+func (c MinIOConfig) ToS3Config() S3Config {
+	endpoint := c.Endpoint
+	// MinIO endpoint should be provided as-is
+	if endpoint == "" {
+		endpoint = "http://localhost:9000" // Default MinIO endpoint
+	}
+
+	return S3Config{
+		AccessKeyID:     c.AccessKeyID,
+		SecretAccessKey: c.SecretAccessKey,
+		Region:          c.Region,
+		BucketName:      c.BucketName,
+		Endpoint:        endpoint,
+		ForcePathStyle:  true,      // MinIO requires path-style addressing
+		DisableSSL:      !c.UseSSL, // Convert UseSSL to DisableSSL
+	}
+}
+
 // Config stores all configuration of the application.
 type Config struct {
 	App          AppConfig             `mapstructure:"app"`
@@ -179,6 +208,7 @@ type Config struct {
 	Azure        AzureConfig           `mapstructure:"azure"`
 	Scaleway     ScalewayConfig        `mapstructure:"scaleway"`
 	BackBlaze    BackBlazeConfig       `mapstructure:"backblaze"`
+	MinIO        MinIOConfig           `mapstructure:"minio"`
 }
 
 // RateLimiterConfig holds rate limiter specific configuration.

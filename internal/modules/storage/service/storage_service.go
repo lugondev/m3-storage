@@ -83,6 +83,7 @@ func (s *storageService) CheckHealthAll(ctx context.Context) (*dto.HealthCheckAl
 		domain.ProviderDiscord,
 		domain.ProviderScaleway,
 		domain.ProviderBackBlaze,
+		domain.ProviderMinIO,
 	}
 
 	for _, providerType := range providers {
@@ -161,6 +162,11 @@ func (s *storageService) ListProviders(ctx context.Context) (*dto.ListProvidersR
 			Name:        "Backblaze B2",
 			Description: "Backblaze B2 Cloud Storage",
 		},
+		{
+			Type:        string(domain.ProviderMinIO),
+			Name:        "MinIO Object Storage",
+			Description: "MinIO High Performance Object Storage",
+		},
 	}
 
 	return &dto.ListProvidersResponse{
@@ -179,6 +185,7 @@ func (s *storageService) isValidProviderType(providerType domain.StorageProvider
 		domain.ProviderDiscord,
 		domain.ProviderScaleway,
 		domain.ProviderBackBlaze,
+		domain.ProviderMinIO,
 	}
 
 	for _, validType := range validTypes {
