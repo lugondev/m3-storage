@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/lugondev/m3-storage/internal/presentation/http/fiber/middleware"
+	"github.com/lugondev/m3-storage/internal/shared/validator"
 
 	"gorm.io/gorm"
 
@@ -19,6 +20,9 @@ import (
 
 	// App Ports & Services (Health, Storage)
 	appPort "github.com/lugondev/m3-storage/internal/modules/app/port"
+
+	// Auth Module
+	"github.com/lugondev/m3-storage/internal/modules/auth"
 
 	// Media Module
 	mediaHandler "github.com/lugondev/m3-storage/internal/modules/media/handler"
@@ -52,8 +56,14 @@ type Application struct {
 	MediaHandler   *mediaHandler.MediaHandler
 	StorageHandler *storageHandler.StorageHandler
 
+	// Auth Module
+	AuthDependencies *auth.Dependencies
+
 	// Middleware
 	AuthMiddleware *middleware.AuthMiddleware
+
+	// Shared Services
+	Validator validator.Validator
 }
 
 // BuildDependencies initializes and wires up all application dependencies.
@@ -67,6 +77,10 @@ func BuildDependencies(infra *Infrastructure) (*Application, error) {
 	// db := infra.DB
 	redisClient := infra.RedisClient // This is the wrapper *cache.RedisClient
 	ctx := context.Background()      // Use background context for initialization logs
+
+	// --- Initialize Shared Services ---
+	app.Validator = validator.New()
+	log.Info(ctx, "Validator service initialized")
 
 	// --- Initialize Repositories ---
 	// userRepo := userService.NewUserRepository(infra.DB, log)
@@ -82,6 +96,10 @@ func BuildDependencies(infra *Infrastructure) (*Application, error) {
 	}
 	app.JWTSvc = jwtSvc
 	log.Info(ctx, "JWT Service initialized successfully")
+
+	// --- Initialize Auth Module ---
+	app.AuthDependencies = auth.NewDependencies(infra.DB, app.JWTSvc, app.Validator)
+	log.Info(ctx, "Auth module initialized")
 
 	// Initialize Notify Service
 	app.NotifySvc, err = sen.NewNotifyService(senConfig.Config{

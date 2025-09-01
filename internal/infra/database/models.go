@@ -74,7 +74,30 @@ type Base struct {
 // User represents a user in the system (globally)
 type User struct {
 	Base
-	Metadata JSONB `gorm:"type:jsonb"`
+	Email          string     `gorm:"type:varchar(255);uniqueIndex;not null"`
+	PasswordHash   string     `gorm:"type:text;not null"`
+	FirstName      string     `gorm:"type:varchar(100);not null"`
+	LastName       string     `gorm:"type:varchar(100);not null"`
+	Status         string     `gorm:"type:varchar(20);not null;default:'active';index:idx_users_status"`
+	EmailVerified  bool       `gorm:"not null;default:false"`
+	LastLoginAt    *time.Time `gorm:"index:idx_users_last_login"`
+	FailedAttempts int        `gorm:"not null;default:0"`
+	LockedUntil    *time.Time
+	Metadata       JSONB `gorm:"type:jsonb"`
+}
+
+// UserProfile represents additional user profile information
+type UserProfile struct {
+	Base
+	UserID      uuid.UUID `gorm:"type:uuid;uniqueIndex;not null"`
+	Avatar      string    `gorm:"type:text"`
+	PhoneNumber string    `gorm:"type:varchar(20)"`
+	DateOfBirth *time.Time
+	Timezone    string `gorm:"type:varchar(50);default:'UTC'"`
+	Language    string `gorm:"type:varchar(10);default:'en'"`
+
+	// Foreign key relationship
+	User User `gorm:"foreignKey:UserID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 }
 
 // AuditLog represents system audit logs

@@ -41,6 +41,12 @@ func validatePermissionCasbin(fl validator.FieldLevel) bool {
 	return true
 }
 
+// Validator interface for validation operations
+type Validator interface {
+	Validate(s any) error
+	Engine() *validator.Validate
+}
+
 // CustomValidator implements validation for Fiber
 type CustomValidator struct {
 	validator *validator.Validate
@@ -70,8 +76,16 @@ func New() *CustomValidator {
 	return &CustomValidator{validator: v}
 }
 
+// Validate validates a struct using validator.v10 tags
+func (cv *CustomValidator) Validate(s any) error {
+	if err := cv.validator.Struct(s); err != nil {
+		return err
+	}
+	return nil
+}
+
 // ValidateStruct validates a struct using validator.v10 tags
-func (cv *CustomValidator) Struct(s any) error {
+func (cv *CustomValidator) ValidateStruct(s any) error {
 	if err := cv.validator.Struct(s); err != nil {
 		return err
 	}

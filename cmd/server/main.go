@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/lugondev/m3-storage/internal/application"
+	"github.com/lugondev/m3-storage/internal/infra/database/seeders"
 	"github.com/lugondev/m3-storage/internal/presentation/http/fiber/middleware"
 	"github.com/lugondev/m3-storage/internal/presentation/http/router"
 
@@ -49,6 +50,24 @@ import (
 // @in header
 // @name Authorization
 func main() {
+	// Check for commands
+	if len(os.Args) > 1 {
+		switch os.Args[1] {
+		case "migrate":
+			runMigration()
+			return
+		case "seed":
+			runSeeder("all")
+			return
+		case "seed:test":
+			runSeeder("test")
+			return
+		case "seed:prod":
+			runSeeder("production")
+			return
+		}
+	}
+
 	// --- Load Configuration ---
 	cfg, err := config.LoadConfig("./config")
 	if err != nil {
@@ -141,6 +160,7 @@ func main() {
 	// --- Register API Routes ---
 	router.RegisterRoutes(app, &router.RouterConfig{
 		AuthMw:         appDeps.AuthMiddleware,
+		AuthHandler:    appDeps.AuthDependencies.AuthHandler,
 		MediaHandler:   appDeps.MediaHandler,
 		StorageHandler: appDeps.StorageHandler,
 	})
@@ -228,4 +248,99 @@ func initI18n() (*i18n.Bundle, error) {
 	}
 
 	return bundle, nil
+}
+
+// runMigration handles database migration only
+func runMigration() {
+	fmt.Println("Running database migration...")
+
+	// Load configuration
+	cfg, err := config.LoadConfig("./config")
+	if err != nil {
+		fmt.Printf("Failed to load configuration: %v\n", err)
+		os.Exit(1)
+	}
+
+	// Initialize logger
+	log, otelErr := logger.NewLogger(&logger.Option{
+		ScopeName:    cfg.App.Name,
+		ScopeVersion: cfg.App.Env,
+		Format:       cfg.Log.Format,
+	})
+	if otelErr != nil {
+		fmt.Printf("Failed to create OpenTelemetry logger: %v\n", otelErr)
+		os.Exit(1)
+	}
+
+	// Initialize Database connection for migration only
+	_, sqlDB, err := database.InitializeDatabase(cfg, log)
+	if err != nil {
+		fmt.Printf("Failed to initialize database: %v\n", err)
+		os.Exit(1)
+	}
+	defer database.CloseSqlDB(sqlDB)
+
+	fmt.Println("Database migration completed successfully!")
+}
+
+// runSeeder handles database seeding
+func runSeeder(seedType string) {
+	fmt.Printf("Running database seeding (%s)...\n", seedType)
+
+	// Load configuration
+	cfg, err := config.LoadConfig("./config")
+	if err != nil {
+		fmt.Printf("Failed to load configuration: %v\n", err)
+		os.Exit(1)
+	}
+
+	// Initialize logger
+	log, otelErr := logger.NewLogger(&logger.Option{
+		ScopeName:    cfg.App.Name,
+		ScopeVersion: cfg.App.Env,
+		Format:       cfg.Log.Format,
+	})
+	if otelErr != nil {
+		fmt.Printf("Failed to create OpenTelemetry logger: %v\n", otelErr)
+		os.Exit(1)
+	}
+
+	// Initialize Database connection for seeding
+	db, sqlDB, err := database.InitializeDatabase(cfg, log)
+	if err != nil {
+		fmt.Printf("Failed to initialize database: %v\n", err)
+		os.Exit(1)
+	}
+	defer database.CloseSqlDB(sqlDB)
+
+	// Initialize seeder manager
+	seederManager := seeders.NewSeederManager(db)
+
+	// Run appropriate seeder based on type
+	switch seedType {
+	case "all":
+		if err := seederManager.SeedAll(); err != nil {
+			fmt.Printf("Failed to seed database: %v\n", err)
+			os.Exit(1)
+		}
+	case "test":
+		if err := seederManager.SeedAll(); err != nil {
+			fmt.Printf("Failed to seed base data: %v\n", err)
+			os.Exit(1)
+		}
+		if err := seederManager.SeedTestData(); err != nil {
+			fmt.Printf("Failed to seed test data: %v\n", err)
+			os.Exit(1)
+		}
+	case "production":
+		if err := seederManager.SeedProduction(); err != nil {
+			fmt.Printf("Failed to seed production data: %v\n", err)
+			os.Exit(1)
+		}
+	default:
+		fmt.Printf("Unknown seed type: %s\n", seedType)
+		os.Exit(1)
+	}
+
+	fmt.Printf("Database seeding (%s) completed successfully!\n", seedType)
 }

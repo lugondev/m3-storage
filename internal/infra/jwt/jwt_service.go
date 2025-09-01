@@ -66,6 +66,12 @@ func (s *JWTService) ValidateToken(ctx context.Context, tokenString string) (*JW
 	return claims, nil
 }
 
+// GenerateToken creates and signs a JWT token with the given claims
+func (s *JWTService) GenerateToken(ctx context.Context, claims *JWTClaims) (string, error) {
+	token := jwt.NewWithClaims(s.signingMethod, claims)
+	return token.SignedString(s.secretKey)
+}
+
 // GenerateJTI creates a new unique identifier for a JWT token.
 func (s *JWTService) GenerateJTI() uuid.UUID {
 	return uuid.New()

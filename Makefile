@@ -7,7 +7,7 @@ export $(shell sed 's/=.*//' .env)
 PATH_CURRENT := $(shell pwd)
 GIT_COMMIT := $(shell git log --oneline -1 HEAD)
 
-.PHONY: run swag db-up db-down migrate
+.PHONY: run swag db-up db-down migrate seed seed-test seed-prod
 
 # Start PostgreSQL and Redis with Docker Compose
 db-up:
@@ -20,6 +20,18 @@ db-down:
 # Migrate database
 migrate:
 	go run cmd/server/main.go migrate
+
+# Seed database with all data
+seed:
+	go run cmd/server/main.go seed
+
+# Seed database with test data
+seed-test:
+	go run cmd/server/main.go seed:test
+
+# Seed database with production data
+seed-prod:
+	go run cmd/server/main.go seed:prod
 
 # Run the main application
 run:
@@ -48,6 +60,3 @@ swag:
 
 seeder:
 	go run cmd/seeder/*.go
-
-migration:
-	go run cmd/seeder/*.go -only-migration

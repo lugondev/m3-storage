@@ -30,11 +30,13 @@ func InitializeDatabase(cfg config.Config, log logger.Logger) (*gorm.DB, *sql.DB
 		return nil, nil, fmt.Errorf("failed to connect to database: %w", err)
 	}
 
-	// Auto-migrate the Media model
+	// Auto-migrate the models
 	if err := db.AutoMigrate(&mediadomain.Media{}); err != nil {
 		log.Errorf(ctx, "Failed to auto-migrate Media model: %v", err)
 		return nil, nil, fmt.Errorf("failed to auto-migrate Media model: %w", err)
 	}
+
+	// The User, UserProfile, and AuditLog models are auto-migrated in database.go autoMigrate function
 
 	sqlDB, err := db.DB()
 	if err != nil {
